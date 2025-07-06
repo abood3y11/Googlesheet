@@ -144,6 +144,57 @@ const ProjectForm = () => {
     }));
   };
 
+  // Helper functions for calculations
+  const calculateEndDate = (startDate, duration) => {
+    if (startDate && duration) {
+      return dayjs(startDate).add(parseInt(duration), 'day');
+    }
+    return null;
+  };
+
+  const calculateDuration = (startDate, endDate) => {
+    if (startDate && endDate) {
+      return dayjs(endDate).diff(dayjs(startDate), 'day');
+    }
+    return '';
+  };
+
+  const handleStartDateChange = (date) => {
+    handleInputChange('project_start_date', date);
+    
+    // Auto-calculate end date if duration exists
+    if (date && formData.project_duration_days) {
+      const endDate = calculateEndDate(date, formData.project_duration_days);
+      if (endDate) {
+        handleInputChange('planned_project_end_date', endDate);
+      }
+    }
+  };
+
+  const handleDurationChange = (duration) => {
+    handleInputChange('project_duration_days', duration);
+    
+    // Auto-calculate end date if start date exists
+    if (formData.project_start_date && duration) {
+      const endDate = calculateEndDate(formData.project_start_date, duration);
+      if (endDate) {
+        handleInputChange('planned_project_end_date', endDate);
+      }
+    }
+  };
+
+  const handleEndDateChange = (date) => {
+    handleInputChange('planned_project_end_date', date);
+    
+    // Auto-calculate duration if start date exists
+    if (formData.project_start_date && date) {
+      const duration = calculateDuration(formData.project_start_date, date);
+      if (duration > 0) {
+        handleInputChange('project_duration_days', duration.toString());
+      }
+    }
+  };
+
   const addLicense = () => {
     const newLicense = {
       id: Date.now(), // Temporary ID for new licenses
@@ -255,38 +306,6 @@ const ProjectForm = () => {
     'عمار القحطاني'
   ];
 
-  // Calculate planned end date when start date or duration changes
-  useEffect(() => {
-    if (formData.project_start_date && formData.project_duration_days) {
-      const startDate = dayjs(formData.project_start_date);
-      const endDate = startDate.add(parseInt(formData.project_duration_days), 'day');
-      
-      // Only update if the calculated date is different from current
-      if (!formData.planned_project_end_date || !endDate.isSame(formData.planned_project_end_date, 'day')) {
-        setFormData(prev => ({
-          ...prev,
-          planned_project_end_date: endDate
-        }));
-      }
-    }
-  }, [formData.project_start_date, formData.project_duration_days, formData.planned_project_end_date]);
-
-  // Calculate duration when start date and end date change
-  useEffect(() => {
-    if (formData.project_start_date && formData.planned_project_end_date) {
-      const startDate = dayjs(formData.project_start_date);
-      const endDate = dayjs(formData.planned_project_end_date);
-      const duration = endDate.diff(startDate, 'day');
-      
-      // Only update if the calculated duration is different from current
-      if (duration > 0 && duration.toString() !== formData.project_duration_days) {
-        setFormData(prev => ({
-          ...prev,
-          project_duration_days: duration.toString()
-        }));
-      }
-    }
-  }, [formData.project_start_date, formData.planned_project_end_date, formData.project_duration_days]);
   // Common styles for all form fields
   const fieldStyles = {
     '& .MuiOutlinedInput-root': {
@@ -880,7 +899,7 @@ const ProjectForm = () => {
                   <DatePicker
                     label="تاريخ بداية المشروع"
                     value={formData.project_start_date}
-                    onChange={(date) => handleInputChange('project_start_date', date)}
+                    onChange={handleStartDateChange}
                     renderInput={(params) => (
                       <TextField
                         {...params}
@@ -917,7 +936,7 @@ const ProjectForm = () => {
                     label="مدة المشروع (أيام)"
                     type="number"
                     value={formData.project_duration_days}
-                    onChange={(e) => handleInputChange('project_duration_days', e.target.value)}
+                    onChange={(e) => handleDurationChange(e.target.value)}
                     sx={fieldStyles}
                     helperText="سيتم حساب تاريخ الانتهاء تلقائياً"
                   />
@@ -927,7 +946,7 @@ const ProjectForm = () => {
                   <DatePicker
                     label="تاريخ انتهاء المشروع المخطط"
                     value={formData.planned_project_end_date}
-                    onChange={(date) => handleInputChange('planned_project_end_date', date)}
+                    onChange={handleEndDateChange}
                     renderInput={(params) => (
                       <TextField
                         {...params}
