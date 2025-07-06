@@ -1,63 +1,179 @@
 import React, { useState, useEffect } from 'react';
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 import {
   Box,
   Typography,
   Grid,
+  TextField,
   Button,
   Alert,
   CircularProgress,
-  Chip,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
   Card,
   CardContent,
-  Avatar,
-  Stack,
   Fade,
+  Avatar,
+  Stepper,
+  Step,
+  StepLabel,
+  Collapse,
   IconButton,
-  Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions
+  Divider,
+  Paper,
+  Stack
 } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import {
-  Edit as EditIcon,
+  Save as SaveIcon,
   ArrowBack as BackIcon,
-  Delete as DeleteIcon,
-  Business as BusinessIcon,
   Person as PersonIcon,
   AttachMoney as MoneyIcon,
   Schedule as ScheduleIcon,
   Assignment as AssignmentIcon,
-  CalendarToday as CalendarIcon,
-  LocationOn as LocationIcon,
-  Description as DescriptionIcon,
   CheckCircle as CheckCircleIcon,
-  Warning as WarningIcon,
-  Error as ErrorIcon,
-  Info as InfoIcon,
-  Cancel as CancelIcon
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  Description as DescriptionIcon
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
+import dayjs from 'dayjs';
 import { projectsAPI } from '../services/api';
 
-const ProjectDetails = () => {
+const ProjectForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const [project, setProject] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const isEdit = Boolean(id);
+
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [deleteDialog, setDeleteDialog] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [activeStep, setActiveStep] = useState(0);
+
+  const { 
+    control, 
+    handleSubmit, 
+    setFocus, 
+    watch,
+    setValue,
+    reset,
+    formState: { errors, isSubmitting } 
+  } = useForm({
+    defaultValues: {
+      project_name: '',
+      beneficiary_organization: '',
+      university_project_manager: '',
+      technical_responsible_beneficiary: '',
+      university_project_team: '',
+      executing_company_name: '',
+      executing_company_project_manager: '',
+      executing_company_representative: '',
+      authorization_number: '',
+      project_authorization_date: null,
+      project_cost: '',
+      purchase_order_number: '',
+      charter_preparation_date: null,
+      project_start_date: null,
+      type_of_project_start: 'from_contract',
+      project_duration_days: '',
+      planned_project_end_date: null,
+      site_handover_date: null,
+      contract_signing_date: null,
+      project_status: 'planning',
+      project_suspension_date: null,
+      suspension_duration: '',
+      project_resumption_date: null,
+      notes: '',
+      // بيانات التعميد
+      authorization_number_mandate: '',
+      authorization_date_mandate: null,
+      authorization_notes: '',
+      // بيانات الرخص
+      licenses: []
+    }
+  });
+
+  // استخدام useFieldArray للرخص
+  const { fields: licenseFields, append: appendLicense, remove: removeLicense } = useFieldArray({
+    control,
+    name: "licenses"
+  });
+
+  const steps = [
+    { label: 'المعلومات الأساسية', icon: <AssignmentIcon /> },
+    { label: 'الفرق والمسؤوليات', icon: <PersonIcon /> },
+    { label: 'بيانات التعميد', icon: <DescriptionIcon /> },
+    { label: 'المعلومات المالية', icon: <MoneyIcon /> },
+    { label: 'الجدول الزمني', icon: <ScheduleIcon /> },
+    { label: 'بيانات الرخص', icon: <DescriptionIcon /> },
+  ];
+
+  // مراقبة التغييرات للحسابات التلقائية
+  const watchedStartDate = watch('project_start_date');
+  const watchedDuration = watch('project_duration_days');
+  const watchedEndDate = watch('planned_project_end_date');
 
   useEffect(() => {
-    fetchProject();
-  }, [id]);
+    if (isEdit) {
+      fetchProject();
+    }
+  }, [id, isEdit]);
+
+  // حساب تلقائي للتواريخ والمدة
+  useEffect(() => {
+    if (watchedStartDate && watchedDuration && !isNaN(watchedDuration)) {
+      const endDate = dayjs(watchedStartDate).add(parseInt(watchedDuration), 'day');
+      setValue('planned_project_end_date', endDate);
+    }
+  }, [watchedStartDate, watchedDuration, setValue]);
+
+  useEffect(() => {
+    if (watchedStartDate && watchedEndDate) {
+      const duration = dayjs(watchedEndDate).diff(dayjs(watchedStartDate), 'day');
+      if (duration > 0) {
+        setValue('project_duration_days', duration.toString());
+      }
+    }
+  }, [watchedStartDate, watchedEndDate, setValue]);
 
   const fetchProject = async () => {
     try {
       setLoading(true);
-      const data = await projectsAPI.getProjectById(id);
-      setProject(data);
-      setError(null);
+      const project = await projectsAPI.getProjectById(id);
+      
+      const formattedProject = { ...project };
+      const dateFields = [
+        'project_authorization_date',
+        'charter_preparation_date',
+        'project_start_date',
+        'planned_project_end_date',
+        'site_handover_date',
+        'contract_signing_date',
+        'project_suspension_date',
+        'project_resumption_date',
+        'authorization_date_mandate'
+      ];
+      
+      dateFields.forEach(field => {
+        if (formattedProject[field]) {
+          formattedProject[field] = dayjs(formattedProject[field]);
+        }
+      });
+
+      // تحويل الرخص إذا كانت موجودة
+      if (project.licenses && project.licenses.length > 0) {
+        formattedProject.licenses = project.licenses.map(license => ({
+          ...license,
+          license_start_date: license.license_start_date ? dayjs(license.license_start_date) : null,
+          license_end_date: license.license_end_date ? dayjs(license.license_end_date) : null,
+        }));
+      } else {
+        formattedProject.licenses = [];
+      }
+      
+      reset(formattedProject);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -65,174 +181,209 @@ const ProjectDetails = () => {
     }
   };
 
-  const handleDelete = async () => {
+  const onSubmit = async (data) => {
     try {
-      await projectsAPI.deleteProject(id);
-      navigate('/projects');
+      setLoading(true);
+      setError(null);
+      
+      const submitData = { ...data };
+      const dateFields = [
+        'project_authorization_date',
+        'charter_preparation_date',
+        'project_start_date',
+        'planned_project_end_date',
+        'site_handover_date',
+        'contract_signing_date',
+        'project_suspension_date',
+        'project_resumption_date',
+        'authorization_date_mandate'
+      ];
+      
+      dateFields.forEach(field => {
+        if (submitData[field] && dayjs.isDayjs(submitData[field])) {
+          submitData[field] = submitData[field].format('YYYY-MM-DD');
+        }
+      });
+
+      // تحويل الرخص
+      if (submitData.licenses && submitData.licenses.length > 0) {
+        submitData.licenses = submitData.licenses.map(license => {
+          const formattedLicense = { ...license };
+          if (formattedLicense.license_start_date && dayjs.isDayjs(formattedLicense.license_start_date)) {
+            formattedLicense.license_start_date = formattedLicense.license_start_date.format('YYYY-MM-DD');
+          }
+          if (formattedLicense.license_end_date && dayjs.isDayjs(formattedLicense.license_end_date)) {
+            formattedLicense.license_end_date = formattedLicense.license_end_date.format('YYYY-MM-DD');
+          }
+          return formattedLicense;
+        });
+      }
+
+      if (submitData.project_cost) {
+        submitData.project_cost = parseFloat(submitData.project_cost);
+      }
+      if (submitData.project_duration_days) {
+        submitData.project_duration_days = parseInt(submitData.project_duration_days);
+      }
+      if (submitData.suspension_duration) {
+        submitData.suspension_duration = parseInt(submitData.suspension_duration);
+      }
+
+      if (isEdit) {
+        await projectsAPI.updateProject(id, submitData);
+      } else {
+        await projectsAPI.createProject(submitData);
+      }
+      
+      setSuccess(true);
+      setTimeout(() => {
+        navigate('/projects');
+      }, 2000);
+      
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusConfig = (status) => {
-    const statusConfigs = {
-      planning: {
-        color: '#3b82f6',
-        bg: '#eff6ff',
-        border: '#bfdbfe',
-        icon: <InfoIcon />,
-        label: 'تخطيط'
-      },
-      in_progress: {
-        color: '#10b981',
-        bg: '#f0fdf4',
-        border: '#bbf7d0',
-        icon: <CheckCircleIcon />,
-        label: 'قيد التنفيذ'
-      },
-      suspended: {
-        color: '#f59e0b',
-        bg: '#fffbeb',
-        border: '#fed7aa',
-        icon: <WarningIcon />,
-        label: 'متوقف'
-      },
-      completed: {
-        color: '#8b5cf6',
-        bg: '#faf5ff',
-        border: '#e9d5ff',
-        icon: <CheckCircleIcon />,
-        label: 'مكتمل'
-      },
-      cancelled: {
-        color: '#ef4444',
-        bg: '#fef2f2',
-        border: '#fecaca',
-        icon: <CancelIcon />,
-        label: 'ملغي'
-      },
-    };
-    return statusConfigs[status] || statusConfigs.planning;
+  const onError = (errors) => {
+    console.log('Form errors:', errors);
+    const firstError = Object.keys(errors)[0];
+    if (firstError) {
+      setFocus(firstError);
+    }
   };
 
-  const getStartTypeLabel = (type) => {
-    const typeLabels = {
-      immediate: 'فوري',
-      scheduled: 'مجدول',
-      conditional: 'مشروط',
-    };
-    return typeLabels[type] || type;
+  const projectStatuses = [
+    { value: 'planning', label: 'تخطيط', color: '#3b82f6' },
+    { value: 'in_progress', label: 'قيد التنفيذ', color: '#10b981' },
+    { value: 'suspended', label: 'متوقف', color: '#f59e0b' },
+    { value: 'completed', label: 'مكتمل', color: '#8b5cf6' },
+    { value: 'cancelled', label: 'ملغي', color: '#ef4444' },
+  ];
+
+  const projectStartTypes = [
+    { value: 'from_contract', label: 'من توقيع العقد' },
+    { value: 'from_authorization', label: 'من التعميد' },
+    { value: 'from_site_handover', label: 'من استلام الموقع' },
+  ];
+
+  const universityProjectManagers = [
+    'محمد الشهري',
+    'نجلاء الحمَيد', 
+    'نوف الفارس',
+    'يوسف العنزي',
+    'سارة المقرن',
+    'عمار القحطاني'
+  ];
+
+  // Common styles for all form fields
+  const fieldStyles = {
+    '& .MuiOutlinedInput-root': {
+      borderRadius: 2,
+      height: '56px',
+      fontFamily: 'Sakkal Majalla',
+      fontSize: '1rem',
+      '&:hover .MuiOutlinedInput-notchedOutline': {
+        borderColor: 'primary.main',
+      },
+      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+        borderWidth: 2,
+        borderColor: 'primary.main',
+      }
+    },
+    '& .MuiInputLabel-root': {
+      fontFamily: 'Sakkal Majalla',
+      fontSize: '1rem',
+      fontWeight: 500,
+      '&.Mui-focused': {
+        color: 'primary.main',
+        fontWeight: 600
+      }
+    },
+    '& .MuiSelect-select': {
+      fontFamily: 'Sakkal Majalla',
+      fontSize: '1rem'
+    }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'غير محدد';
-    return new Date(dateString).toLocaleDateString('ar-SA', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+  const textAreaStyles = {
+    '& .MuiOutlinedInput-root': {
+      borderRadius: 2,
+      fontFamily: 'Sakkal Majalla',
+      fontSize: '1rem',
+      '&:hover .MuiOutlinedInput-notchedOutline': {
+        borderColor: 'primary.main',
+      },
+      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+        borderWidth: 2,
+        borderColor: 'primary.main',
+      }
+    },
+    '& .MuiInputLabel-root': {
+      fontFamily: 'Sakkal Majalla',
+      fontSize: '1rem',
+      fontWeight: 500,
+      '&.Mui-focused': {
+        color: 'primary.main',
+        fontWeight: 600
+      }
+    }
+  };
+
+  const FormSection = ({ title, icon, children, step, gradient }) => (
+    <Collapse in={activeStep === step} timeout={500}>
+      <Card sx={{
+        borderRadius: 3,
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
+        border: '1px solid rgba(0, 0, 0, 0.04)',
+        overflow: 'hidden',
+        mb: 4
+      }}>
+        <Box sx={{
+          background: gradient || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          p: 3
+        }}>
+          <Box display="flex" alignItems="center" gap={2}>
+            <Avatar sx={{
+              bgcolor: 'rgba(255, 255, 255, 0.2)',
+              backdropFilter: 'blur(10px)',
+              width: 48,
+              height: 48
+            }}>
+              {icon}
+            </Avatar>
+            <Typography 
+              variant="h5" 
+              sx={{ 
+                fontWeight: 700,
+                fontFamily: 'Sakkal Majalla'
+              }}
+            >
+              {title}
+            </Typography>
+          </Box>
+        </Box>
+        <CardContent sx={{ p: 4 }}>
+          {children}
+        </CardContent>
+      </Card>
+    </Collapse>
+  );
+
+  const addLicense = () => {
+    appendLicense({
+      license_number: '',
+      license_name: '',
+      license_start_date: null,
+      license_end_date: null,
+      notes: '',
     });
   };
 
-  const formatCurrency = (amount) => {
-    if (!amount) return 'غير محدد';
-    return new Intl.NumberFormat('ar-SA', {
-      style: 'currency',
-      currency: 'SAR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const InfoCard = ({ title, icon, children, gradient }) => (
-    <Card sx={{
-      height: '100%',
-      borderRadius: 4,
-      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-      border: '1px solid rgba(0, 0, 0, 0.04)',
-      overflow: 'hidden',
-      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-      '&:hover': {
-        transform: 'translateY(-4px)',
-        boxShadow: '0 8px 30px rgba(0, 0, 0, 0.12)',
-      }
-    }}>
-      <Box sx={{
-        background: gradient || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        p: 2.5,
-        position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: '80px',
-          height: '80px',
-          background: 'rgba(255, 255, 255, 0.1)',
-          borderRadius: '50%',
-          transform: 'translate(25px, -25px)',
-        }
-      }}>
-        <Box display="flex" alignItems="center" gap={2} position="relative" zIndex={1}>
-          <Avatar sx={{
-            bgcolor: 'rgba(255, 255, 255, 0.2)',
-            backdropFilter: 'blur(10px)',
-            width: 48,
-            height: 48
-          }}>
-            {icon}
-          </Avatar>
-          <Typography 
-            variant="h6" 
-            sx={{ 
-              fontWeight: 700,
-              fontFamily: 'Sakkal Majalla'
-            }}
-          >
-            {title}
-          </Typography>
-        </Box>
-      </Box>
-      <CardContent sx={{ p: 3 }}>
-        {children}
-      </CardContent>
-    </Card>
-  );
-
-  const DetailItem = ({ label, value, icon }) => (
-    <Box display="flex" alignItems="flex-start" gap={2} py={1}>
-      {icon && (
-        <Box sx={{ color: 'text.secondary', mt: 0.5 }}>
-          {icon}
-        </Box>
-      )}
-      <Box flex={1}>
-        <Typography 
-          variant="body2" 
-          color="text.secondary" 
-          sx={{ 
-            fontWeight: 600, 
-            mb: 0.5,
-            fontFamily: 'Sakkal Majalla'
-          }}
-        >
-          {label}
-        </Typography>
-        <Typography 
-          variant="body1" 
-          sx={{ 
-            fontWeight: 500, 
-            wordBreak: 'break-word',
-            fontFamily: 'Sakkal Majalla'
-          }}
-        >
-          {value || 'غير محدد'}
-        </Typography>
-      </Box>
-    </Box>
-  );
-
-  if (loading) {
+  if (loading && isEdit) {
     return (
       <Box sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3 } }}>
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
@@ -243,7 +394,7 @@ const ProjectDetails = () => {
               color="text.secondary"
               sx={{ fontFamily: 'Sakkal Majalla' }}
             >
-              جاري تحميل تفاصيل المشروع...
+              جاري تحميل بيانات المشروع...
             </Typography>
           </Box>
         </Box>
@@ -251,509 +402,1003 @@ const ProjectDetails = () => {
     );
   }
 
-  if (error) {
-    return (
-      <Box sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3 } }}>
-        <Box sx={{ py: 4 }}>
-          <Alert
-            severity="error"
-            sx={{
-              mb: 3,
-              borderRadius: 3,
-              fontFamily: 'Sakkal Majalla',
-              '& .MuiAlert-icon': { fontSize: 24 }
-            }}
-          >
-            {error}
-          </Alert>
-          <Button
-            startIcon={<BackIcon />}
-            onClick={() => navigate('/projects')}
-            variant="contained"
-            sx={{ 
-              borderRadius: 3,
-              fontFamily: 'Sakkal Majalla'
-            }}
-          >
-            العودة إلى قائمة المشاريع
-          </Button>
-        </Box>
-      </Box>
-    );
-  }
-
-  if (!project) {
-    return (
-      <Box sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3 } }}>
-        <Box sx={{ py: 4 }}>
-          <Alert
-            severity="warning"
-            sx={{
-              mb: 3,
-              borderRadius: 3,
-              fontFamily: 'Sakkal Majalla',
-              '& .MuiAlert-icon': { fontSize: 24 }
-            }}
-          >
-            المشروع غير موجود
-          </Alert>
-          <Button
-            startIcon={<BackIcon />}
-            onClick={() => navigate('/projects')}
-            variant="contained"
-            sx={{ 
-              borderRadius: 3,
-              fontFamily: 'Sakkal Majalla'
-            }}
-          >
-            العودة إلى قائمة المشاريع
-          </Button>
-        </Box>
-      </Box>
-    );
-  }
-
-  const statusConfig = getStatusConfig(project.project_status);
-
   return (
     <Fade in={true} timeout={800}>
       <Box sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3 } }}>
         <Box sx={{ py: 4 }}>
           {/* Header */}
-          <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={4} flexWrap="wrap" gap={2}>
-            <Box display="flex" alignItems="center" gap={3} flexWrap="wrap">
-              <Button
-                startIcon={<BackIcon />}
-                onClick={() => navigate('/projects')}
+          <Box display="flex" alignItems="center" mb={4} flexWrap="wrap" gap={2}>
+            <Button
+              startIcon={<BackIcon />}
+              onClick={() => navigate('/projects')}
+              sx={{
+                borderRadius: 3,
+                px: 3,
+                py: 1.5,
+                fontWeight: 600,
+                border: '2px solid transparent',
+                fontFamily: 'Sakkal Majalla',
+                '&:hover': {
+                  bgcolor: 'primary.50',
+                  color: 'primary.main',
+                  borderColor: 'primary.200'
+                }
+              }}
+            >
+              العودة للقائمة
+            </Button>
+            <Box>
+              <Typography
+                variant="h3"
+                component="h1"
                 sx={{
-                  borderRadius: 3,
-                  px: 3,
-                  py: 1.5,
-                  fontWeight: 600,
-                  border: '2px solid transparent',
+                  fontWeight: 800,
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  mb: 0.5,
                   fontFamily: 'Sakkal Majalla',
-                  '&:hover': {
-                    bgcolor: 'primary.50',
-                    color: 'primary.main',
-                    borderColor: 'primary.200'
-                  }
+                  fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' }
                 }}
               >
-                العودة للقائمة
-              </Button>
-              <Box>
-                <Typography
-                  variant="h3"
-                  component="h1"
-                  sx={{
-                    fontWeight: 800,
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    mb: 1,
-                    lineHeight: 1.2,
-                    fontFamily: 'Sakkal Majalla',
-                    fontSize: { xs: '1.75rem', sm: '2.25rem', md: '3rem' }
-                  }}
-                >
-                  {project.project_name}
-                </Typography>
-                <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
-                  <Chip
-                    icon={statusConfig.icon}
-                    label={statusConfig.label}
-                    sx={{
-                      bgcolor: statusConfig.bg,
-                      color: statusConfig.color,
-                      border: `2px solid ${statusConfig.border}`,
-                      fontWeight: 700,
-                      fontSize: '0.9rem',
-                      height: 36,
-                      fontFamily: 'Sakkal Majalla',
-                      '& .MuiChip-icon': {
-                        color: statusConfig.color
-                      }
-                    }}
-                  />
-                  <Typography 
-                    variant="body1" 
-                    color="text.secondary" 
-                    sx={{ 
-                      fontWeight: 500,
-                      fontFamily: 'Sakkal Majalla'
-                    }}
-                  >
-                    المعرف: {project.id}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-
-            <Box display="flex" gap={2} flexWrap="wrap">
-              <Tooltip title="تعديل المشروع">
-                <Button
-                  variant="outlined"
-                  startIcon={<EditIcon />}
-                  onClick={() => navigate(`/projects/${id}/edit`)}
-                  sx={{
-                    borderRadius: 3,
-                    px: 3,
-                    py: 1.5,
-                    fontWeight: 600,
-                    borderColor: 'primary.300',
-                    color: 'primary.main',
-                    fontFamily: 'Sakkal Majalla',
-                    '&:hover': {
-                      bgcolor: 'primary.50',
-                      borderColor: 'primary.main'
-                    }
-                  }}
-                >
-                  تعديل
-                </Button>
-              </Tooltip>
-              <Tooltip title="حذف المشروع">
-                <Button
-                  variant="outlined"
-                  startIcon={<DeleteIcon />}
-                  onClick={() => setDeleteDialog(true)}
-                  sx={{
-                    borderRadius: 3,
-                    px: 3,
-                    py: 1.5,
-                    fontWeight: 600,
-                    borderColor: 'error.300',
-                    color: 'error.main',
-                    fontFamily: 'Sakkal Majalla',
-                    '&:hover': {
-                      bgcolor: 'error.50',
-                      borderColor: 'error.main'
-                    }
-                  }}
-                >
-                  حذف
-                </Button>
-              </Tooltip>
-            </Box>
-          </Box>
-
-          {/* Content Grid */}
-          <Grid container spacing={3}>
-            {/* Basic Information */}
-            <Grid item xs={12} lg={6}>
-              <InfoCard
-                title="المعلومات الأساسية"
-                icon={<AssignmentIcon />}
-                gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-              >
-                <Stack spacing={2}>
-                  <DetailItem
-                    label="الجهة المستفيدة"
-                    value={project.beneficiary_organization}
-                    icon={<BusinessIcon fontSize="small" />}
-                  />
-                  <DetailItem
-                    label="مدير المشروع بالجامعة"
-                    value={project.university_project_manager}
-                    icon={<PersonIcon fontSize="small" />}
-                  />
-                  <DetailItem
-                    label="فريق المشروع بالجامعة"
-                    value={project.university_project_team}
-                    icon={<PersonIcon fontSize="small" />}
-                  />
-                  <DetailItem
-                    label="المسؤول الفني بالجهة المستفيدة"
-                    value={project.technical_responsible_beneficiary}
-                    icon={<PersonIcon fontSize="small" />}
-                  />
-                </Stack>
-              </InfoCard>
-            </Grid>
-
-            {/* Company Information */}
-            <Grid item xs={12} lg={6}>
-              <InfoCard
-                title="معلومات الشركة المنفذة"
-                icon={<BusinessIcon />}
-                gradient="linear-gradient(135deg, #10b981 0%, #059669 100%)"
-              >
-                <Stack spacing={2}>
-                  <DetailItem
-                    label="اسم الشركة المنفذة"
-                    value={project.executing_company_name}
-                    icon={<BusinessIcon fontSize="small" />}
-                  />
-                  <DetailItem
-                    label="مدير المشروع (الشركة المنفذة)"
-                    value={project.executing_company_project_manager}
-                    icon={<PersonIcon fontSize="small" />}
-                  />
-                  <DetailItem
-                    label="ممثل الشركة المنفذة"
-                    value={project.executing_company_representative}
-                    icon={<PersonIcon fontSize="small" />}
-                  />
-                </Stack>
-              </InfoCard>
-            </Grid>
-
-            {/* Financial Information */}
-            <Grid item xs={12} lg={6}>
-              <InfoCard
-                title="المعلومات المالية"
-                icon={<MoneyIcon />}
-                gradient="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
-              >
-                <Stack spacing={2}>
-                  <DetailItem
-                    label="تكلفة المشروع"
-                    value={formatCurrency(project.project_cost)}
-                    icon={<MoneyIcon fontSize="small" />}
-                  />
-                  <DetailItem
-                    label="رقم التفويض"
-                    value={project.authorization_number}
-                    icon={<DescriptionIcon fontSize="small" />}
-                  />
-                  <DetailItem
-                    label="تاريخ تفويض المشروع"
-                    value={formatDate(project.project_authorization_date)}
-                    icon={<CalendarIcon fontSize="small" />}
-                  />
-                  <DetailItem
-                    label="رقم أمر الشراء (راسين)"
-                    value={project.purchase_order_number}
-                    icon={<DescriptionIcon fontSize="small" />}
-                  />
-                </Stack>
-              </InfoCard>
-            </Grid>
-
-            {/* Timeline Information */}
-            <Grid item xs={12} lg={6}>
-              <InfoCard
-                title="الجدول الزمني"
-                icon={<ScheduleIcon />}
-                gradient="linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)"
-              >
-                <Stack spacing={2}>
-                  <DetailItem
-                    label="تاريخ إعداد الميثاق"
-                    value={formatDate(project.charter_preparation_date)}
-                    icon={<CalendarIcon fontSize="small" />}
-                  />
-                  <DetailItem
-                    label="تاريخ بداية المشروع"
-                    value={formatDate(project.project_start_date)}
-                    icon={<CalendarIcon fontSize="small" />}
-                  />
-                  <DetailItem
-                    label="نوع بداية المشروع"
-                    value={getStartTypeLabel(project.type_of_project_start)}
-                    icon={<InfoIcon fontSize="small" />}
-                  />
-                  <DetailItem
-                    label="مدة المشروع (أيام)"
-                    value={project.project_duration_days}
-                    icon={<ScheduleIcon fontSize="small" />}
-                  />
-                </Stack>
-              </InfoCard>
-            </Grid>
-
-            {/* Project Dates */}
-            <Grid item xs={12} lg={6}>
-              <InfoCard
-                title="تواريخ المشروع"
-                icon={<CalendarIcon />}
-                gradient="linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)"
-              >
-                <Stack spacing={2}>
-                  <DetailItem
-                    label="تاريخ انتهاء المشروع المخطط"
-                    value={formatDate(project.planned_project_end_date)}
-                    icon={<CalendarIcon fontSize="small" />}
-                  />
-                  <DetailItem
-                    label="تاريخ انتهاء المشروع الفعلي"
-                    value={formatDate(project.actual_project_end_date)}
-                    icon={<CalendarIcon fontSize="small" />}
-                  />
-                  <DetailItem
-                    label="تاريخ تسليم الموقع"
-                    value={formatDate(project.site_handover_date)}
-                    icon={<LocationIcon fontSize="small" />}
-                  />
-                  <DetailItem
-                    label="تاريخ توقيع العقد"
-                    value={formatDate(project.contract_signing_date)}
-                    icon={<DescriptionIcon fontSize="small" />}
-                  />
-                </Stack>
-              </InfoCard>
-            </Grid>
-
-            {/* Suspension Information */}
-            {(project.project_suspension_date || project.suspension_duration || project.project_resumption_date) && (
-              <Grid item xs={12} lg={6}>
-                <InfoCard
-                  title="معلومات الإيقاف والاستئناف"
-                  icon={<WarningIcon />}
-                  gradient="linear-gradient(135deg, #ef4444 0%, #dc2626 100%)"
-                >
-                  <Stack spacing={2}>
-                    {project.project_suspension_date && (
-                      <DetailItem
-                        label="تاريخ إيقاف المشروع"
-                        value={formatDate(project.project_suspension_date)}
-                        icon={<CalendarIcon fontSize="small" />}
-                      />
-                    )}
-                    {project.suspension_duration && (
-                      <DetailItem
-                        label="مدة الإيقاف (أيام)"
-                        value={project.suspension_duration}
-                        icon={<ScheduleIcon fontSize="small" />}
-                      />
-                    )}
-                    {project.project_resumption_date && (
-                      <DetailItem
-                        label="تاريخ استئناف المشروع"
-                        value={formatDate(project.project_resumption_date)}
-                        icon={<CalendarIcon fontSize="small" />}
-                      />
-                    )}
-                  </Stack>
-                </InfoCard>
-              </Grid>
-            )}
-
-            {/* Notes */}
-            {project.notes && (
-              <Grid item xs={12}>
-                <InfoCard
-                  title="ملاحظات"
-                  icon={<DescriptionIcon />}
-                  gradient="linear-gradient(135deg, #64748b 0%, #475569 100%)"
-                >
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      whiteSpace: 'pre-wrap',
-                      lineHeight: 1.8,
-                      fontWeight: 500,
-                      color: 'text.primary',
-                      fontFamily: 'Sakkal Majalla'
-                    }}
-                  >
-                    {project.notes}
-                  </Typography>
-                </InfoCard>
-              </Grid>
-            )}
-          </Grid>
-
-          {/* Delete Confirmation Dialog */}
-          <Dialog
-            open={deleteDialog}
-            onClose={() => setDeleteDialog(false)}
-            PaperProps={{
-              sx: {
-                borderRadius: 4,
-                minWidth: 400,
-                overflow: 'hidden'
-              }
-            }}
-          >
-            <DialogTitle sx={{
-              fontWeight: 700,
-              fontSize: '1.5rem',
-              pb: 2,
-              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-              color: 'white',
-              textAlign: 'center',
-              fontFamily: 'Sakkal Majalla'
-            }}>
-              تأكيد حذف المشروع
-            </DialogTitle>
-            <DialogContent sx={{ pt: 4, pb: 3, textAlign: 'center' }}>
-              <DeleteIcon sx={{ fontSize: 60, color: 'error.main', mb: 2 }} />
+                {isEdit ? 'تعديل المشروع' : 'إنشاء مشروع جديد'}
+              </Typography>
               <Typography 
                 variant="h6" 
-                sx={{ 
-                  mb: 2, 
-                  fontWeight: 600,
-                  fontFamily: 'Sakkal Majalla'
-                }}
-              >
-                هل أنت متأكد من حذف هذا المشروع؟
-              </Typography>
-              <Typography 
-                variant="body1" 
                 color="text.secondary" 
-                sx={{ 
-                  mb: 1,
-                  fontFamily: 'Sakkal Majalla'
-                }}
-              >
-                "{project.project_name}"
-              </Typography>
-              <Typography 
-                variant="body2" 
-                color="error.main" 
                 sx={{ 
                   fontWeight: 500,
                   fontFamily: 'Sakkal Majalla'
                 }}
               >
-                هذا الإجراء لا يمكن التراجع عنه
+                {isEdit ? 'تحديث معلومات المشروع الحالي' : 'إضافة مشروع جديد إلى النظام'}
               </Typography>
-            </DialogContent>
-            <DialogActions sx={{ p: 3, gap: 2, justifyContent: 'center' }}>
-              <Button
-                onClick={() => setDeleteDialog(false)}
-                variant="outlined"
-                sx={{
-                  borderRadius: 3,
-                  px: 4,
-                  py: 1.5,
-                  fontWeight: 600,
-                  borderColor: 'grey.300',
-                  color: 'grey.700',
-                  fontFamily: 'Sakkal Majalla',
-                  '&:hover': {
-                    borderColor: 'grey.400',
-                    bgcolor: 'grey.50'
-                  }
-                }}
-              >
-                إلغاء
-              </Button>
-              <Button
-                onClick={handleDelete}
-                variant="contained"
-                sx={{
-                  borderRadius: 3,
-                  px: 4,
-                  py: 1.5,
-                  fontWeight: 600,
-                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                  fontFamily: 'Sakkal Majalla',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
-                  }
-                }}
-              >
-                حذف المشروع
-              </Button>
-            </DialogActions>
-          </Dialog>
+            </Box>
+          </Box>
+
+          {/* Alerts */}
+          {error && (
+            <Alert
+              severity="error"
+              sx={{
+                mb: 4,
+                borderRadius: 3,
+                border: '1px solid #fecaca',
+                fontFamily: 'Sakkal Majalla',
+                '& .MuiAlert-icon': { fontSize: 24 }
+              }}
+            >
+              {error}
+            </Alert>
+          )}
+
+          {success && (
+            <Alert
+              severity="success"
+              sx={{
+                mb: 4,
+                borderRadius: 3,
+                border: '1px solid #bbf7d0',
+                fontFamily: 'Sakkal Majalla',
+                '& .MuiAlert-icon': { fontSize: 24 }
+              }}
+            >
+              <Box display="flex" alignItems="center" gap={1}>
+                <CheckCircleIcon />
+                <Typography sx={{ fontWeight: 600, fontFamily: 'Sakkal Majalla' }}>
+                  تم {isEdit ? 'تحديث' : 'إنشاء'} المشروع بنجاح! جاري التوجيه...
+                </Typography>
+              </Box>
+            </Alert>
+          )}
+
+          {/* Stepper */}
+          <Card sx={{
+            borderRadius: 3,
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+            mb: 4,
+            overflow: 'hidden'
+          }}>
+            <CardContent sx={{ p: 4 }}>
+              <Stepper activeStep={activeStep} alternativeLabel>
+                {steps.map((step, index) => (
+                  <Step key={step.label}>
+                    <StepLabel
+                      StepIconComponent={({ active, completed }) => (
+                        <Avatar sx={{
+                          bgcolor: active || completed ? 'primary.main' : 'grey.300',
+                          color: 'white',
+                          width: 40,
+                          height: 40,
+                          transition: 'all 0.3s ease'
+                        }}>
+                          {step.icon}
+                        </Avatar>
+                      )}
+                    >
+                      <Typography sx={{
+                        fontWeight: activeStep === index ? 700 : 500,
+                        color: activeStep === index ? 'primary.main' : 'text.secondary',
+                        mt: 1,
+                        fontFamily: 'Sakkal Majalla',
+                        fontSize: '0.875rem'
+                      }}>
+                        {step.label}
+                      </Typography>
+                    </StepLabel>
+                  </Step>
+                ))}
+              </Stepper>
+              
+              <Box display="flex" justifyContent="center" gap={1} mt={3} flexWrap="wrap">
+                {steps.map((_, index) => (
+                  <Button
+                    key={index}
+                    variant={activeStep === index ? "contained" : "outlined"}
+                    size="small"
+                    onClick={() => setActiveStep(index)}
+                    sx={{
+                      minWidth: 40,
+                      height: 40,
+                      borderRadius: 2,
+                      fontWeight: 600,
+                      fontFamily: 'Sakkal Majalla'
+                    }}
+                  >
+                    {index + 1}
+                  </Button>
+                ))}
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit(onSubmit, onError)}>
+            {/* Step 1: Basic Information */}
+            <FormSection
+              title="المعلومات الأساسية"
+              icon={<AssignmentIcon />}
+              step={0}
+            >
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="project_name"
+                    control={control}
+                    rules={{ required: "اسم المشروع مطلوب" }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        label="اسم المشروع"
+                        error={!!errors.project_name}
+                        helperText={errors.project_name?.message}
+                        sx={fieldStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="beneficiary_organization"
+                    control={control}
+                    rules={{ required: "الجهة المستفيدة مطلوبة" }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        label="الجهة المستفيدة"
+                        error={!!errors.beneficiary_organization}
+                        helperText={errors.beneficiary_organization?.message}
+                        sx={fieldStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="project_status"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl fullWidth sx={fieldStyles}>
+                        <InputLabel>حالة المشروع</InputLabel>
+                        <Select
+                          {...field}
+                          label="حالة المشروع"
+                        >
+                          {projectStatuses.map((status) => (
+                            <MenuItem key={status.value} value={status.value}>
+                              <Box display="flex" alignItems="center" gap={1}>
+                                <Box
+                                  sx={{
+                                    width: 12,
+                                    height: 12,
+                                    borderRadius: '50%',
+                                    bgcolor: status.color
+                                  }}
+                                />
+                                <Typography sx={{ fontFamily: 'Sakkal Majalla' }}>
+                                  {status.label}
+                                </Typography>
+                              </Box>
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="notes"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        label="ملاحظات"
+                        sx={fieldStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+              </Grid>
+            </FormSection>
+
+            {/* Step 2: Teams and Responsibilities */}
+            <FormSection
+              title="الفرق والمسؤوليات"
+              icon={<PersonIcon />}
+              step={1}
+              gradient="linear-gradient(135deg, #10b981 0%, #059669 100%)"
+            >
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="university_project_manager"
+                    control={control}
+                    rules={{ required: "مدير المشروع بالجامعة مطلوب" }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        label="مدير المشروع بالجامعة"
+                        select
+                        error={!!errors.university_project_manager}
+                        helperText={errors.university_project_manager?.message}
+                        sx={fieldStyles}
+                      >
+                        {universityProjectManagers.map((manager) => (
+                          <MenuItem key={manager} value={manager}>
+                            <Typography sx={{ fontFamily: 'Sakkal Majalla' }}>
+                              {manager}
+                            </Typography>
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="technical_responsible_beneficiary"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        label="المسؤول الفني بالجهة المستفيدة"
+                        sx={fieldStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="university_project_team"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        label="فريق المشروع بالجامعة"
+                        sx={fieldStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="executing_company_name"
+                    control={control}
+                    rules={{ required: "اسم الشركة المنفذة مطلوب" }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        label="اسم الشركة المنفذة"
+                        error={!!errors.executing_company_name}
+                        helperText={errors.executing_company_name?.message}
+                        sx={fieldStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="executing_company_project_manager"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        label="مدير المشروع (الشركة المنفذة)"
+                        sx={fieldStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="executing_company_representative"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        label="ممثل الشركة المنفذة"
+                        sx={fieldStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+              </Grid>
+            </FormSection>
+
+            {/* Step 3: Authorization Data */}
+            <FormSection
+              title="بيانات التعميد"
+              icon={<DescriptionIcon />}
+              step={2}
+              gradient="linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)"
+            >
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="authorization_number_mandate"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        label="رقم التعميد"
+                        sx={fieldStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="authorization_date_mandate"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        {...field}
+                        label="تاريخ التعميد"
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            sx={fieldStyles}
+                          />
+                        )}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Controller
+                    name="authorization_notes"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        label="ملاحظات التعميد"
+                        multiline
+                        rows={4}
+                        sx={textAreaStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+              </Grid>
+            </FormSection>
+
+            {/* Step 4: Financial Information */}
+            <FormSection
+              title="المعلومات المالية"
+              icon={<MoneyIcon />}
+              step={3}
+              gradient="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
+            >
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="project_cost"
+                    control={control}
+                    rules={{ 
+                      required: "تكلفة المشروع مطلوبة",
+                      min: { value: 1, message: "التكلفة يجب أن تكون أكبر من صفر" }
+                    }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        label="تكلفة المشروع (ريال سعودي)"
+                        type="number"
+                        error={!!errors.project_cost}
+                        helperText={errors.project_cost?.message}
+                        sx={fieldStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="purchase_order_number"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        label="رقم أمر الشراء (راسين)"
+                        sx={fieldStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="authorization_number"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        label="رقم التفويض"
+                        sx={fieldStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="project_authorization_date"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        {...field}
+                        label="تاريخ تفويض المشروع"
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            sx={fieldStyles}
+                          />
+                        )}
+                      />
+                    )}
+                  />
+                </Grid>
+              </Grid>
+            </FormSection>
+
+            {/* Step 5: Timeline */}
+            <FormSection
+              title="الجدول الزمني"
+              icon={<ScheduleIcon />}
+              step={4}
+              gradient="linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)"
+            >
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="project_start_date"
+                    control={control}
+                    rules={{ required: "تاريخ بداية المشروع مطلوب" }}
+                    render={({ field }) => (
+                      <DatePicker
+                        {...field}
+                        label="تاريخ بداية المشروع"
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            error={!!errors.project_start_date}
+                            helperText={errors.project_start_date?.message}
+                            sx={fieldStyles}
+                          />
+                        )}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="type_of_project_start"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl fullWidth sx={fieldStyles}>
+                        <InputLabel>نوع بداية المشروع</InputLabel>
+                        <Select
+                          {...field}
+                          label="نوع بداية المشروع"
+                        >
+                          {projectStartTypes.map((type) => (
+                            <MenuItem key={type.value} value={type.value}>
+                              <Typography sx={{ fontFamily: 'Sakkal Majalla' }}>
+                                {type.label}
+                              </Typography>
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="project_duration_days"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        label="مدة المشروع (أيام)"
+                        type="number"
+                        sx={fieldStyles}
+                        helperText="سيتم حساب تاريخ الانتهاء تلقائياً"
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="planned_project_end_date"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        {...field}
+                        label="تاريخ انتهاء المشروع المخطط"
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            sx={fieldStyles}
+                            helperText="سيتم حساب المدة تلقائياً"
+                          />
+                        )}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="site_handover_date"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        {...field}
+                        label="تاريخ تسليم الموقع"
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            sx={fieldStyles}
+                          />
+                        )}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="contract_signing_date"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        {...field}
+                        label="تاريخ توقيع العقد"
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            sx={fieldStyles}
+                          />
+                        )}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="charter_preparation_date"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        {...field}
+                        label="تاريخ إعداد الميثاق"
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            fullWidth
+                            sx={fieldStyles}
+                          />
+                        )}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Box sx={{
+                    p: 3,
+                    borderRadius: 3,
+                    bgcolor: 'info.50',
+                    border: '1px solid',
+                    borderColor: 'info.200'
+                  }}>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        fontWeight: 600,
+                        color: 'info.main',
+                        fontFamily: 'Sakkal Majalla',
+                        mb: 1
+                      }}
+                    >
+                      ملاحظة هامة:
+                    </Typography>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: 'info.dark',
+                        fontFamily: 'Sakkal Majalla',
+                        lineHeight: 1.6
+                      }}
+                    >
+                      • تاريخ انتهاء المشروع الفعلي يتم حسابه تلقائياً من النظام<br/>
+                      • عند إدخال تاريخ البداية والمدة، سيتم حساب تاريخ الانتهاء المخطط تلقائياً<br/>
+                      • عند إدخال تاريخ البداية والانتهاء المخطط، سيتم حساب المدة تلقائياً
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </FormSection>
+
+            {/* Step 6: License Data */}
+            <FormSection
+              title="بيانات الرخص"
+              icon={<DescriptionIcon />}
+              step={5}
+              gradient="linear-gradient(135deg, #ef4444 0%, #dc2626 100%)"
+            >
+              <Box>
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+                  <Typography 
+                    variant="h6" 
+                    sx={{ 
+                      fontWeight: 600,
+                      color: 'text.primary',
+                      fontFamily: 'Sakkal Majalla'
+                    }}
+                  >
+                    إدارة رخص المشروع
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={addLicense}
+                    sx={{
+                      borderRadius: 3,
+                      px: 3,
+                      py: 1.5,
+                      fontWeight: 600,
+                      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                      fontFamily: 'Sakkal Majalla',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                        transform: 'translateY(-1px)'
+                      }
+                    }}
+                  >
+                    إضافة رخصة
+                  </Button>
+                </Box>
+
+                {licenseFields.length === 0 ? (
+                  <Box 
+                    sx={{
+                      textAlign: 'center',
+                      py: 6,
+                      border: '2px dashed #d1d5db',
+                      borderRadius: 3,
+                      bgcolor: '#f9fafb'
+                    }}
+                  >
+                    <DescriptionIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+                    <Typography 
+                      variant="h6" 
+                      color="text.secondary" 
+                      sx={{ 
+                        mb: 1,
+                        fontFamily: 'Sakkal Majalla'
+                      }}
+                    >
+                      لا توجد رخص مضافة
+                    </Typography>
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ fontFamily: 'Sakkal Majalla' }}
+                    >
+                      اضغط على "إضافة رخصة" لبدء إضافة رخص المشروع
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Stack spacing={3}>
+                    {licenseFields.map((field, index) => (
+                      <Paper key={field.id} sx={{
+                        p: 3,
+                        borderRadius: 3,
+                        border: '2px solid #e5e7eb',
+                        position: 'relative',
+                        '&:hover': {
+                          borderColor: 'primary.main',
+                          boxShadow: '0 4px 20px rgba(102, 126, 234, 0.15)'
+                        }
+                      }}>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                          <Typography 
+                            variant="h6" 
+                            sx={{ 
+                              fontWeight: 700,
+                              color: 'primary.main',
+                              fontFamily: 'Sakkal Majalla'
+                            }}
+                          >
+                            الرخصة #{index + 1}
+                          </Typography>
+                          <IconButton
+                            onClick={() => removeLicense(index)}
+                            sx={{
+                              color: 'error.main',
+                              '&:hover': {
+                                bgcolor: 'error.50'
+                              }
+                            }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Box>
+                        
+                        <Grid container spacing={3}>
+                          <Grid item xs={12} md={6}>
+                            <Controller
+                              name={`licenses.${index}.license_number`}
+                              control={control}
+                              render={({ field }) => (
+                                <TextField
+                                  {...field}
+                                  fullWidth
+                                  label="رقم الرخصة"
+                                  sx={fieldStyles}
+                                />
+                              )}
+                            />
+                          </Grid>
+                          
+                          <Grid item xs={12} md={6}>
+                            <Controller
+                              name={`licenses.${index}.license_name`}
+                              control={control}
+                              render={({ field }) => (
+                                <TextField
+                                  {...field}
+                                  fullWidth
+                                  label="اسم الرخصة"
+                                  sx={fieldStyles}
+                                />
+                              )}
+                            />
+                          </Grid>
+                          
+                          <Grid item xs={12} md={6}>
+                            <Controller
+                              name={`licenses.${index}.license_start_date`}
+                              control={control}
+                              render={({ field }) => (
+                                <DatePicker
+                                  {...field}
+                                  label="تاريخ بداية الرخصة"
+                                  renderInput={(params) => (
+                                    <TextField
+                                      {...params}
+                                      fullWidth
+                                      sx={fieldStyles}
+                                    />
+                                  )}
+                                />
+                              )}
+                            />
+                          </Grid>
+                          
+                          <Grid item xs={12} md={6}>
+                            <Controller
+                              name={`licenses.${index}.license_end_date`}
+                              control={control}
+                              render={({ field }) => (
+                                <DatePicker
+                                  {...field}
+                                  label="تاريخ انتهاء الرخصة"
+                                  renderInput={(params) => (
+                                    <TextField
+                                      {...params}
+                                      fullWidth
+                                      sx={fieldStyles}
+                                    />
+                                  )}
+                                />
+                              )}
+                            />
+                          </Grid>
+                          
+                          <Grid item xs={12}>
+                            <Controller
+                              name={`licenses.${index}.notes`}
+                              control={control}
+                              render={({ field }) => (
+                                <TextField
+                                  {...field}
+                                  fullWidth
+                                  label="ملاحظات الرخصة"
+                                  multiline
+                                  rows={3}
+                                  sx={textAreaStyles}
+                                />
+                              )}
+                            />
+                          </Grid>
+                        </Grid>
+                      </Paper>
+                    ))}
+                  </Stack>
+                )}
+              </Box>
+            </FormSection>
+
+            {/* Action Buttons */}
+            <Card sx={{
+              borderRadius: 3,
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
+              border: '1px solid rgba(0, 0, 0, 0.04)',
+              mt: 4
+            }}>
+              <CardContent sx={{ p: 4 }}>
+                <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
+                  <Box display="flex" gap={2} flexWrap="wrap">
+                    <Button
+                      variant="outlined"
+                      onClick={() => setActiveStep(Math.max(0, activeStep - 1))}
+                      disabled={activeStep === 0}
+                      sx={{
+                        borderRadius: 3,
+                        px: 4,
+                        py: 1.5,
+                        fontWeight: 600,
+                        fontFamily: 'Sakkal Majalla',
+                        height: '48px'
+                      }}
+                    >
+                      السابق
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      onClick={() => setActiveStep(Math.min(steps.length - 1, activeStep + 1))}
+                      disabled={activeStep === steps.length - 1}
+                      sx={{
+                        borderRadius: 3,
+                        px: 4,
+                        py: 1.5,
+                        fontWeight: 600,
+                        fontFamily: 'Sakkal Majalla',
+                        height: '48px'
+                      }}
+                    >
+                      التالي
+                    </Button>
+                  </Box>
+
+                  <Box display="flex" gap={2} flexWrap="wrap">
+                    <Button
+                      variant="outlined"
+                      onClick={() => navigate('/projects')}
+                      sx={{
+                        borderRadius: 3,
+                        px: 4,
+                        py: 1.5,
+                        fontWeight: 600,
+                        borderColor: 'grey.300',
+                        color: 'grey.700',
+                        fontFamily: 'Sakkal Majalla',
+                        height: '48px',
+                        '&:hover': {
+                          borderColor: 'grey.400',
+                          bgcolor: 'grey.50'
+                        }
+                      }}
+                    >
+                      إلغاء
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+                      disabled={isSubmitting}
+                      sx={{
+                        borderRadius: 3,
+                        px: 6,
+                        py: 1.5,
+                        fontWeight: 700,
+                        fontSize: '1rem',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)',
+                        fontFamily: 'Sakkal Majalla',
+                        height: '48px',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
+                          boxShadow: '0 12px 40px rgba(102, 126, 234, 0.4)',
+                          transform: 'translateY(-2px)'
+                        },
+                        '&:disabled': {
+                          background: 'grey.300',
+                          boxShadow: 'none',
+                          transform: 'none'
+                        }
+                      }}
+                    >
+                      {isSubmitting ? 'جاري الحفظ...' : (isEdit ? 'تحديث المشروع' : 'حفظ المشروع')}
+                    </Button>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </form>
         </Box>
       </Box>
     </Fade>
   );
 };
 
-export default ProjectDetails;
+export default ProjectForm;
