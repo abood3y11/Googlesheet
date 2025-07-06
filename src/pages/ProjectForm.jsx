@@ -78,12 +78,18 @@ const ProjectForm = () => {
     suspension_duration: '',
     project_resumption_date: null,
     notes: '',
+    authorization_data: {
+      authorization_number: '',
+      authorization_date: null,
+      authorization_notes: '',
+    },
   });
 
   const [licenses, setLicenses] = useState([]);
   const steps = [
     { label: 'المعلومات الأساسية', icon: <AssignmentIcon /> },
     { label: 'الفرق والمسؤوليات', icon: <PersonIcon /> },
+    { label: 'بيانات التعميد', icon: <AssignmentIcon /> },
     { label: 'المعلومات المالية', icon: <MoneyIcon /> },
     { label: 'الجدول الزمني', icon: <ScheduleIcon /> },
     { label: 'بيانات الرخص', icon: <DescriptionIcon /> },
@@ -118,6 +124,11 @@ const ProjectForm = () => {
           formattedProject[field] = dayjs(formattedProject[field]);
         }
       });
+      
+      // Format authorization date if exists
+      if (formattedProject.authorization_data?.authorization_date) {
+        formattedProject.authorization_data.authorization_date = dayjs(formattedProject.authorization_data.authorization_date);
+      }
       
       setFormData(formattedProject);
       
@@ -214,6 +225,12 @@ const ProjectForm = () => {
       });
       
       submitData.licenses = formattedLicenses;
+      
+      // Format authorization date
+      if (submitData.authorization_data?.authorization_date && dayjs.isDayjs(submitData.authorization_data.authorization_date)) {
+        submitData.authorization_data.authorization_date = submitData.authorization_data.authorization_date.format('YYYY-MM-DD');
+      }
+      
       if (isEdit) {
         await projectsAPI.updateProject(id, submitData);
       } else {
@@ -755,11 +772,67 @@ const ProjectForm = () => {
               </Grid>
             </FormSection>
 
-            {/* Step 3: Financial Information */}
+            {/* Step 3: Authorization Data */}
+            <FormSection
+              title="بيانات التعميد"
+              icon={<AssignmentIcon />}
+              step={2}
+              gradient="linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)"
+            >
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="رقم التعميد"
+                    value={formData.authorization_data?.authorization_number || ''}
+                    onChange={(e) => handleInputChange('authorization_data', {
+                      ...formData.authorization_data,
+                      authorization_number: e.target.value
+                    })}
+                    sx={fieldStyles}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <DatePicker
+                    label="تاريخ التعميد"
+                    value={formData.authorization_data?.authorization_date || null}
+                    onChange={(date) => handleInputChange('authorization_data', {
+                      ...formData.authorization_data,
+                      authorization_date: date
+                    })}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        fullWidth
+                        sx={fieldStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="ملاحظات التعميد"
+                    value={formData.authorization_data?.authorization_notes || ''}
+                    onChange={(e) => handleInputChange('authorization_data', {
+                      ...formData.authorization_data,
+                      authorization_notes: e.target.value
+                    })}
+                    multiline
+                    rows={4}
+                    sx={textAreaStyles}
+                  />
+                </Grid>
+              </Grid>
+            </FormSection>
+
+            {/* Step 4: Financial Information */}
             <FormSection
               title="المعلومات المالية"
               icon={<MoneyIcon />}
-              step={2}
+              step={3}
               gradient="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
             >
               <Grid container spacing={3}>
@@ -812,11 +885,11 @@ const ProjectForm = () => {
               </Grid>
             </FormSection>
 
-            {/* Step 4: Timeline */}
+            {/* Step 5: Timeline */}
             <FormSection
               title="الجدول الزمني"
               icon={<ScheduleIcon />}
-              step={3}
+              step={4}
               gradient="linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)"
             >
               <Grid container spacing={3}>
@@ -943,11 +1016,11 @@ const ProjectForm = () => {
               </Grid>
             </FormSection>
 
-            {/* Step 5: License Data */}
+            {/* Step 6: License Data */}
             <FormSection
               title="بيانات الرخص"
               icon={<DescriptionIcon />}
-              step={4}
+              step={5}
               gradient="linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)"
             >
               <Box>
