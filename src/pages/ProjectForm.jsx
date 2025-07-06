@@ -19,6 +19,10 @@ import {
   Step,
   StepLabel,
   Collapse,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  FormLabel,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import {
@@ -29,7 +33,11 @@ import {
   AttachMoney as MoneyIcon,
   Schedule as ScheduleIcon,
   Assignment as AssignmentIcon,
-  CheckCircle as CheckCircleIcon
+  CheckCircle as CheckCircleIcon,
+  Pause as PauseIcon,
+  PlayArrow as ResumeIcon,
+  Cancel as CancelIcon,
+  Update as ExtendIcon
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -71,6 +79,15 @@ const ProjectForm = () => {
     suspension_duration: '',
     project_resumption_date: null,
     notes: '',
+    // أوامر التغيير الجديدة
+    suspension_notes: '',
+    extension_type: 'days',
+    extension_duration: '',
+    extension_end_date: null,
+    extension_notes: '',
+    cancellation_notes: '',
+    resumption_notes: '',
+    resumption_end_date: null,
   });
 
   const steps = [
@@ -78,6 +95,10 @@ const ProjectForm = () => {
     { label: 'الفرق والمسؤوليات', icon: <PersonIcon /> },
     { label: 'المعلومات المالية', icon: <MoneyIcon /> },
     { label: 'الجدول الزمني', icon: <ScheduleIcon /> },
+    { label: 'إيقاف المشروع', icon: <PauseIcon /> },
+    { label: 'تمديد المشروع', icon: <ExtendIcon /> },
+    { label: 'إلغاء المشروع', icon: <CancelIcon /> },
+    { label: 'استئناف المشروع', icon: <ResumeIcon /> },
   ];
 
   useEffect(() => {
@@ -102,6 +123,8 @@ const ProjectForm = () => {
         'contract_signing_date',
         'project_suspension_date',
         'project_resumption_date',
+        'extension_end_date',
+        'resumption_end_date',
       ];
       
       dateFields.forEach(field => {
@@ -143,6 +166,8 @@ const ProjectForm = () => {
         'contract_signing_date',
         'project_suspension_date',
         'project_resumption_date',
+        'extension_end_date',
+        'resumption_end_date',
       ];
       
       dateFields.forEach(field => {
@@ -159,6 +184,9 @@ const ProjectForm = () => {
       }
       if (submitData.suspension_duration) {
         submitData.suspension_duration = parseInt(submitData.suspension_duration);
+      }
+      if (submitData.extension_duration) {
+        submitData.extension_duration = parseInt(submitData.extension_duration);
       }
 
       if (isEdit) {
@@ -193,6 +221,12 @@ const ProjectForm = () => {
     { value: 'conditional', label: 'مشروط' },
   ];
 
+  const extensionTypes = [
+    { value: 'days', label: 'يوم' },
+    { value: 'weeks', label: 'أسبوع' },
+    { value: 'months', label: 'شهر' },
+  ];
+
   // Common styles for all form fields
   const fieldStyles = {
     '& .MuiOutlinedInput-root': {
@@ -223,7 +257,31 @@ const ProjectForm = () => {
     }
   };
 
-  const FormSection = ({ title, icon, children, step }) => (
+  const textAreaStyles = {
+    '& .MuiOutlinedInput-root': {
+      borderRadius: 2,
+      fontFamily: 'Sakkal Majalla',
+      fontSize: '1rem',
+      '&:hover .MuiOutlinedInput-notchedOutline': {
+        borderColor: 'primary.main',
+      },
+      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+        borderWidth: 2,
+        borderColor: 'primary.main',
+      }
+    },
+    '& .MuiInputLabel-root': {
+      fontFamily: 'Sakkal Majalla',
+      fontSize: '1rem',
+      fontWeight: 500,
+      '&.Mui-focused': {
+        color: 'primary.main',
+        fontWeight: 600
+      }
+    }
+  };
+
+  const FormSection = ({ title, icon, children, step, gradient }) => (
     <Collapse in={activeStep === step} timeout={500}>
       <Card sx={{
         borderRadius: 3,
@@ -233,7 +291,7 @@ const ProjectForm = () => {
         mb: 4
       }}>
         <Box sx={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: gradient || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           color: 'white',
           p: 3
         }}>
@@ -402,7 +460,8 @@ const ProjectForm = () => {
                         fontWeight: activeStep === index ? 700 : 500,
                         color: activeStep === index ? 'primary.main' : 'text.secondary',
                         mt: 1,
-                        fontFamily: 'Sakkal Majalla'
+                        fontFamily: 'Sakkal Majalla',
+                        fontSize: '0.875rem'
                       }}>
                         {step.label}
                       </Typography>
@@ -411,7 +470,7 @@ const ProjectForm = () => {
                 ))}
               </Stepper>
               
-              <Box display="flex" justifyContent="center" gap={1} mt={3}>
+              <Box display="flex" justifyContent="center" gap={1} mt={3} flexWrap="wrap">
                 {steps.map((_, index) => (
                   <Button
                     key={index}
@@ -510,6 +569,7 @@ const ProjectForm = () => {
               title="الفرق والمسؤوليات"
               icon={<PersonIcon />}
               step={1}
+              gradient="linear-gradient(135deg, #10b981 0%, #059669 100%)"
             >
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
@@ -581,6 +641,7 @@ const ProjectForm = () => {
               title="المعلومات المالية"
               icon={<MoneyIcon />}
               step={2}
+              gradient="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
             >
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
@@ -637,6 +698,7 @@ const ProjectForm = () => {
               title="الجدول الزمني"
               icon={<ScheduleIcon />}
               step={3}
+              gradient="linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)"
             >
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
@@ -746,19 +808,33 @@ const ProjectForm = () => {
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="مدة الإيقاف (أيام)"
-                    type="number"
-                    value={formData.suspension_duration}
-                    onChange={(e) => handleInputChange('suspension_duration', e.target.value)}
-                    sx={fieldStyles}
+                  <DatePicker
+                    label="تاريخ إعداد الميثاق"
+                    value={formData.charter_preparation_date}
+                    onChange={(date) => handleInputChange('charter_preparation_date', date)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        fullWidth
+                        sx={fieldStyles}
+                      />
+                    )}
                   />
                 </Grid>
+              </Grid>
+            </FormSection>
 
+            {/* Step 5: Project Suspension */}
+            <FormSection
+              title="إيقاف المشروع"
+              icon={<PauseIcon />}
+              step={4}
+              gradient="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
+            >
+              <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <DatePicker
-                    label="تاريخ إيقاف المشروع"
+                    label="تاريخ الإيقاف"
                     value={formData.project_suspension_date}
                     onChange={(date) => handleInputChange('project_suspension_date', date)}
                     renderInput={(params) => (
@@ -772,8 +848,146 @@ const ProjectForm = () => {
                 </Grid>
 
                 <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="مدة الإيقاف (أيام)"
+                    type="number"
+                    value={formData.suspension_duration}
+                    onChange={(e) => handleInputChange('suspension_duration', e.target.value)}
+                    sx={fieldStyles}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="ملاحظات الإيقاف"
+                    multiline
+                    rows={3}
+                    value={formData.suspension_notes}
+                    onChange={(e) => handleInputChange('suspension_notes', e.target.value)}
+                    sx={textAreaStyles}
+                  />
+                </Grid>
+              </Grid>
+            </FormSection>
+
+            {/* Step 6: Project Extension */}
+            <FormSection
+              title="تمديد المشروع"
+              icon={<ExtendIcon />}
+              step={5}
+              gradient="linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)"
+            >
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <FormControl component="fieldset">
+                    <FormLabel 
+                      component="legend" 
+                      sx={{ 
+                        fontFamily: 'Sakkal Majalla', 
+                        fontWeight: 600, 
+                        color: 'text.primary',
+                        mb: 2
+                      }}
+                    >
+                      ادخل المدة أولاً ثم اختر نوعها
+                    </FormLabel>
+                    <RadioGroup
+                      row
+                      value={formData.extension_type}
+                      onChange={(e) => handleInputChange('extension_type', e.target.value)}
+                    >
+                      {extensionTypes.map((type) => (
+                        <FormControlLabel
+                          key={type.value}
+                          value={type.value}
+                          control={<Radio />}
+                          label={
+                            <Typography sx={{ fontFamily: 'Sakkal Majalla' }}>
+                              {type.label}
+                            </Typography>
+                          }
+                        />
+                      ))}
+                    </RadioGroup>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="مدة التمديد"
+                    type="number"
+                    value={formData.extension_duration}
+                    onChange={(e) => handleInputChange('extension_duration', e.target.value)}
+                    sx={fieldStyles}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
                   <DatePicker
-                    label="تاريخ استئناف المشروع"
+                    label="تاريخ نهاية المشروع بعد التمديد"
+                    value={formData.extension_end_date}
+                    onChange={(date) => handleInputChange('extension_end_date', date)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        fullWidth
+                        sx={fieldStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="ملاحظات التمديد"
+                    multiline
+                    rows={3}
+                    value={formData.extension_notes}
+                    onChange={(e) => handleInputChange('extension_notes', e.target.value)}
+                    sx={textAreaStyles}
+                  />
+                </Grid>
+              </Grid>
+            </FormSection>
+
+            {/* Step 7: Project Cancellation */}
+            <FormSection
+              title="إلغاء المشروع"
+              icon={<CancelIcon />}
+              step={6}
+              gradient="linear-gradient(135deg, #ef4444 0%, #dc2626 100%)"
+            >
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="ملاحظات الإلغاء"
+                    multiline
+                    rows={4}
+                    value={formData.cancellation_notes}
+                    onChange={(e) => handleInputChange('cancellation_notes', e.target.value)}
+                    sx={textAreaStyles}
+                    placeholder="اذكر أسباب إلغاء المشروع والتفاصيل ذات الصلة..."
+                  />
+                </Grid>
+              </Grid>
+            </FormSection>
+
+            {/* Step 8: Project Resumption */}
+            <FormSection
+              title="استئناف المشروع"
+              icon={<ResumeIcon />}
+              step={7}
+              gradient="linear-gradient(135deg, #10b981 0%, #059669 100%)"
+            >
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <DatePicker
+                    label="تاريخ الاستئناف"
                     value={formData.project_resumption_date}
                     onChange={(date) => handleInputChange('project_resumption_date', date)}
                     renderInput={(params) => (
@@ -783,6 +997,33 @@ const ProjectForm = () => {
                         sx={fieldStyles}
                       />
                     )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <DatePicker
+                    label="تاريخ نهاية المشروع بعد الاستئناف"
+                    value={formData.resumption_end_date}
+                    onChange={(date) => handleInputChange('resumption_end_date', date)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        fullWidth
+                        sx={fieldStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="ملاحظات الاستئناف"
+                    multiline
+                    rows={3}
+                    value={formData.resumption_notes}
+                    onChange={(e) => handleInputChange('resumption_notes', e.target.value)}
+                    sx={textAreaStyles}
                   />
                 </Grid>
               </Grid>
