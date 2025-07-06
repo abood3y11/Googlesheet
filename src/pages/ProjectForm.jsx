@@ -193,14 +193,44 @@ const ProjectForm = () => {
     { value: 'conditional', label: 'مشروط' },
   ];
 
+  // Common styles for all form fields
+  const fieldStyles = {
+    '& .MuiOutlinedInput-root': {
+      borderRadius: 2,
+      height: '56px',
+      fontFamily: 'Sakkal Majalla',
+      fontSize: '1rem',
+      '&:hover .MuiOutlinedInput-notchedOutline': {
+        borderColor: 'primary.main',
+      },
+      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+        borderWidth: 2,
+        borderColor: 'primary.main',
+      }
+    },
+    '& .MuiInputLabel-root': {
+      fontFamily: 'Sakkal Majalla',
+      fontSize: '1rem',
+      fontWeight: 500,
+      '&.Mui-focused': {
+        color: 'primary.main',
+        fontWeight: 600
+      }
+    },
+    '& .MuiSelect-select': {
+      fontFamily: 'Sakkal Majalla',
+      fontSize: '1rem'
+    }
+  };
+
   const FormSection = ({ title, icon, children, step }) => (
     <Collapse in={activeStep === step} timeout={500}>
       <Card sx={{
-        borderRadius: 4,
+        borderRadius: 3,
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
         border: '1px solid rgba(0, 0, 0, 0.04)',
         overflow: 'hidden',
-        mb: 3
+        mb: 4
       }}>
         <Box sx={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -210,7 +240,9 @@ const ProjectForm = () => {
           <Box display="flex" alignItems="center" gap={2}>
             <Avatar sx={{
               bgcolor: 'rgba(255, 255, 255, 0.2)',
-              backdropFilter: 'blur(10px)'
+              backdropFilter: 'blur(10px)',
+              width: 48,
+              height: 48
             }}>
               {icon}
             </Avatar>
@@ -344,7 +376,7 @@ const ProjectForm = () => {
 
           {/* Stepper */}
           <Card sx={{
-            borderRadius: 4,
+            borderRadius: 3,
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
             mb: 4,
             overflow: 'hidden'
@@ -410,26 +442,14 @@ const ProjectForm = () => {
               step={0}
             >
               <Grid container spacing={3}>
-                <Grid item xs={12}>
+                <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="اسم المشروع"
                     value={formData.project_name}
                     onChange={(e) => handleInputChange('project_name', e.target.value)}
                     required
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 3,
-                        fontSize: '1.1rem',
-                        fontFamily: 'Sakkal Majalla',
-                        '&:hover .MuiOutlinedInput-notchedOutline': {
-                          borderColor: 'primary.main',
-                        }
-                      },
-                      '& .MuiInputLabel-root': {
-                        fontFamily: 'Sakkal Majalla'
-                      }
-                    }}
+                    sx={fieldStyles}
                   />
                 </Grid>
                 
@@ -440,29 +460,17 @@ const ProjectForm = () => {
                     value={formData.beneficiary_organization}
                     onChange={(e) => handleInputChange('beneficiary_organization', e.target.value)}
                     required
-                    sx={{ 
-                      '& .MuiOutlinedInput-root': { 
-                        borderRadius: 3,
-                        fontFamily: 'Sakkal Majalla'
-                      },
-                      '& .MuiInputLabel-root': {
-                        fontFamily: 'Sakkal Majalla'
-                      }
-                    }}
+                    sx={fieldStyles}
                   />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <FormControl fullWidth>
-                    <InputLabel sx={{ fontFamily: 'Sakkal Majalla' }}>حالة المشروع</InputLabel>
+                  <FormControl fullWidth sx={fieldStyles}>
+                    <InputLabel>حالة المشروع</InputLabel>
                     <Select
                       value={formData.project_status}
                       onChange={(e) => handleInputChange('project_status', e.target.value)}
                       label="حالة المشروع"
-                      sx={{ 
-                        borderRadius: 3,
-                        fontFamily: 'Sakkal Majalla'
-                      }}
                     >
                       {projectStatuses.map((status) => (
                         <MenuItem key={status.value} value={status.value}>
@@ -485,23 +493,13 @@ const ProjectForm = () => {
                   </FormControl>
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="ملاحظات"
-                    multiline
-                    rows={4}
                     value={formData.notes}
                     onChange={(e) => handleInputChange('notes', e.target.value)}
-                    sx={{ 
-                      '& .MuiOutlinedInput-root': { 
-                        borderRadius: 3,
-                        fontFamily: 'Sakkal Majalla'
-                      },
-                      '& .MuiInputLabel-root': {
-                        fontFamily: 'Sakkal Majalla'
-                      }
-                    }}
+                    sx={fieldStyles}
                   />
                 </Grid>
               </Grid>
@@ -521,15 +519,7 @@ const ProjectForm = () => {
                     value={formData.university_project_manager}
                     onChange={(e) => handleInputChange('university_project_manager', e.target.value)}
                     required
-                    sx={{ 
-                      '& .MuiOutlinedInput-root': { 
-                        borderRadius: 3,
-                        fontFamily: 'Sakkal Majalla'
-                      },
-                      '& .MuiInputLabel-root': {
-                        fontFamily: 'Sakkal Majalla'
-                      }
-                    }}
+                    sx={fieldStyles}
                   />
                 </Grid>
 
@@ -539,35 +529,17 @@ const ProjectForm = () => {
                     label="المسؤول الفني بالجهة المستفيدة"
                     value={formData.technical_responsible_beneficiary}
                     onChange={(e) => handleInputChange('technical_responsible_beneficiary', e.target.value)}
-                    sx={{ 
-                      '& .MuiOutlinedInput-root': { 
-                        borderRadius: 3,
-                        fontFamily: 'Sakkal Majalla'
-                      },
-                      '& .MuiInputLabel-root': {
-                        fontFamily: 'Sakkal Majalla'
-                      }
-                    }}
+                    sx={fieldStyles}
                   />
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="فريق المشروع بالجامعة"
                     value={formData.university_project_team}
                     onChange={(e) => handleInputChange('university_project_team', e.target.value)}
-                    multiline
-                    rows={2}
-                    sx={{ 
-                      '& .MuiOutlinedInput-root': { 
-                        borderRadius: 3,
-                        fontFamily: 'Sakkal Majalla'
-                      },
-                      '& .MuiInputLabel-root': {
-                        fontFamily: 'Sakkal Majalla'
-                      }
-                    }}
+                    sx={fieldStyles}
                   />
                 </Grid>
 
@@ -578,15 +550,7 @@ const ProjectForm = () => {
                     value={formData.executing_company_name}
                     onChange={(e) => handleInputChange('executing_company_name', e.target.value)}
                     required
-                    sx={{ 
-                      '& .MuiOutlinedInput-root': { 
-                        borderRadius: 3,
-                        fontFamily: 'Sakkal Majalla'
-                      },
-                      '& .MuiInputLabel-root': {
-                        fontFamily: 'Sakkal Majalla'
-                      }
-                    }}
+                    sx={fieldStyles}
                   />
                 </Grid>
 
@@ -596,35 +560,17 @@ const ProjectForm = () => {
                     label="مدير المشروع (الشركة المنفذة)"
                     value={formData.executing_company_project_manager}
                     onChange={(e) => handleInputChange('executing_company_project_manager', e.target.value)}
-                    sx={{ 
-                      '& .MuiOutlinedInput-root': { 
-                        borderRadius: 3,
-                        fontFamily: 'Sakkal Majalla'
-                      },
-                      '& .MuiInputLabel-root': {
-                        fontFamily: 'Sakkal Majalla'
-                      }
-                    }}
+                    sx={fieldStyles}
                   />
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="ممثل الشركة المنفذة"
                     value={formData.executing_company_representative}
                     onChange={(e) => handleInputChange('executing_company_representative', e.target.value)}
-                    multiline
-                    rows={2}
-                    sx={{ 
-                      '& .MuiOutlinedInput-root': { 
-                        borderRadius: 3,
-                        fontFamily: 'Sakkal Majalla'
-                      },
-                      '& .MuiInputLabel-root': {
-                        fontFamily: 'Sakkal Majalla'
-                      }
-                    }}
+                    sx={fieldStyles}
                   />
                 </Grid>
               </Grid>
@@ -645,15 +591,7 @@ const ProjectForm = () => {
                     value={formData.project_cost}
                     onChange={(e) => handleInputChange('project_cost', e.target.value)}
                     required
-                    sx={{ 
-                      '& .MuiOutlinedInput-root': { 
-                        borderRadius: 3,
-                        fontFamily: 'Sakkal Majalla'
-                      },
-                      '& .MuiInputLabel-root': {
-                        fontFamily: 'Sakkal Majalla'
-                      }
-                    }}
+                    sx={fieldStyles}
                   />
                 </Grid>
 
@@ -663,15 +601,7 @@ const ProjectForm = () => {
                     label="رقم أمر الشراء (راسين)"
                     value={formData.purchase_order_number}
                     onChange={(e) => handleInputChange('purchase_order_number', e.target.value)}
-                    sx={{ 
-                      '& .MuiOutlinedInput-root': { 
-                        borderRadius: 3,
-                        fontFamily: 'Sakkal Majalla'
-                      },
-                      '& .MuiInputLabel-root': {
-                        fontFamily: 'Sakkal Majalla'
-                      }
-                    }}
+                    sx={fieldStyles}
                   />
                 </Grid>
 
@@ -681,15 +611,7 @@ const ProjectForm = () => {
                     label="رقم التفويض"
                     value={formData.authorization_number}
                     onChange={(e) => handleInputChange('authorization_number', e.target.value)}
-                    sx={{ 
-                      '& .MuiOutlinedInput-root': { 
-                        borderRadius: 3,
-                        fontFamily: 'Sakkal Majalla'
-                      },
-                      '& .MuiInputLabel-root': {
-                        fontFamily: 'Sakkal Majalla'
-                      }
-                    }}
+                    sx={fieldStyles}
                   />
                 </Grid>
 
@@ -702,15 +624,7 @@ const ProjectForm = () => {
                       <TextField
                         {...params}
                         fullWidth
-                        sx={{ 
-                          '& .MuiOutlinedInput-root': { 
-                            borderRadius: 3,
-                            fontFamily: 'Sakkal Majalla'
-                          },
-                          '& .MuiInputLabel-root': {
-                            fontFamily: 'Sakkal Majalla'
-                          }
-                        }}
+                        sx={fieldStyles}
                       />
                     )}
                   />
@@ -735,31 +649,19 @@ const ProjectForm = () => {
                         {...params}
                         fullWidth
                         required
-                        sx={{ 
-                          '& .MuiOutlinedInput-root': { 
-                            borderRadius: 3,
-                            fontFamily: 'Sakkal Majalla'
-                          },
-                          '& .MuiInputLabel-root': {
-                            fontFamily: 'Sakkal Majalla'
-                          }
-                        }}
+                        sx={fieldStyles}
                       />
                     )}
                   />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <FormControl fullWidth>
-                    <InputLabel sx={{ fontFamily: 'Sakkal Majalla' }}>نوع بداية المشروع</InputLabel>
+                  <FormControl fullWidth sx={fieldStyles}>
+                    <InputLabel>نوع بداية المشروع</InputLabel>
                     <Select
                       value={formData.type_of_project_start}
                       onChange={(e) => handleInputChange('type_of_project_start', e.target.value)}
                       label="نوع بداية المشروع"
-                      sx={{ 
-                        borderRadius: 3,
-                        fontFamily: 'Sakkal Majalla'
-                      }}
                     >
                       {projectStartTypes.map((type) => (
                         <MenuItem key={type.value} value={type.value}>
@@ -779,15 +681,7 @@ const ProjectForm = () => {
                     type="number"
                     value={formData.project_duration_days}
                     onChange={(e) => handleInputChange('project_duration_days', e.target.value)}
-                    sx={{ 
-                      '& .MuiOutlinedInput-root': { 
-                        borderRadius: 3,
-                        fontFamily: 'Sakkal Majalla'
-                      },
-                      '& .MuiInputLabel-root': {
-                        fontFamily: 'Sakkal Majalla'
-                      }
-                    }}
+                    sx={fieldStyles}
                   />
                 </Grid>
 
@@ -800,15 +694,7 @@ const ProjectForm = () => {
                       <TextField
                         {...params}
                         fullWidth
-                        sx={{ 
-                          '& .MuiOutlinedInput-root': { 
-                            borderRadius: 3,
-                            fontFamily: 'Sakkal Majalla'
-                          },
-                          '& .MuiInputLabel-root': {
-                            fontFamily: 'Sakkal Majalla'
-                          }
-                        }}
+                        sx={fieldStyles}
                       />
                     )}
                   />
@@ -823,15 +709,7 @@ const ProjectForm = () => {
                       <TextField
                         {...params}
                         fullWidth
-                        sx={{ 
-                          '& .MuiOutlinedInput-root': { 
-                            borderRadius: 3,
-                            fontFamily: 'Sakkal Majalla'
-                          },
-                          '& .MuiInputLabel-root': {
-                            fontFamily: 'Sakkal Majalla'
-                          }
-                        }}
+                        sx={fieldStyles}
                       />
                     )}
                   />
@@ -846,15 +724,63 @@ const ProjectForm = () => {
                       <TextField
                         {...params}
                         fullWidth
-                        sx={{ 
-                          '& .MuiOutlinedInput-root': { 
-                            borderRadius: 3,
-                            fontFamily: 'Sakkal Majalla'
-                          },
-                          '& .MuiInputLabel-root': {
-                            fontFamily: 'Sakkal Majalla'
-                          }
-                        }}
+                        sx={fieldStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <DatePicker
+                    label="تاريخ توقيع العقد"
+                    value={formData.contract_signing_date}
+                    onChange={(date) => handleInputChange('contract_signing_date', date)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        fullWidth
+                        sx={fieldStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="مدة الإيقاف (أيام)"
+                    type="number"
+                    value={formData.suspension_duration}
+                    onChange={(e) => handleInputChange('suspension_duration', e.target.value)}
+                    sx={fieldStyles}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <DatePicker
+                    label="تاريخ إيقاف المشروع"
+                    value={formData.project_suspension_date}
+                    onChange={(date) => handleInputChange('project_suspension_date', date)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        fullWidth
+                        sx={fieldStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <DatePicker
+                    label="تاريخ استئناف المشروع"
+                    value={formData.project_resumption_date}
+                    onChange={(date) => handleInputChange('project_resumption_date', date)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        fullWidth
+                        sx={fieldStyles}
                       />
                     )}
                   />
@@ -864,7 +790,7 @@ const ProjectForm = () => {
 
             {/* Action Buttons */}
             <Card sx={{
-              borderRadius: 4,
+              borderRadius: 3,
               boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
               border: '1px solid rgba(0, 0, 0, 0.04)',
               mt: 4
@@ -881,7 +807,8 @@ const ProjectForm = () => {
                         px: 4,
                         py: 1.5,
                         fontWeight: 600,
-                        fontFamily: 'Sakkal Majalla'
+                        fontFamily: 'Sakkal Majalla',
+                        height: '48px'
                       }}
                     >
                       السابق
@@ -895,7 +822,8 @@ const ProjectForm = () => {
                         px: 4,
                         py: 1.5,
                         fontWeight: 600,
-                        fontFamily: 'Sakkal Majalla'
+                        fontFamily: 'Sakkal Majalla',
+                        height: '48px'
                       }}
                     >
                       التالي
@@ -914,6 +842,7 @@ const ProjectForm = () => {
                         borderColor: 'grey.300',
                         color: 'grey.700',
                         fontFamily: 'Sakkal Majalla',
+                        height: '48px',
                         '&:hover': {
                           borderColor: 'grey.400',
                           bgcolor: 'grey.50'
@@ -936,6 +865,7 @@ const ProjectForm = () => {
                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                         boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)',
                         fontFamily: 'Sakkal Majalla',
+                        height: '48px',
                         '&:hover': {
                           background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
                           boxShadow: '0 12px 40px rgba(102, 126, 234, 0.4)',
