@@ -138,11 +138,10 @@ const ProjectForm = () => {
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prevData => {
-      const newData = { ...prevData };
-      newData[field] = value;
-      return newData;
-    });
+    setFormData(prevData => ({
+      ...prevData,
+      [field]: value
+    }));
   };
 
   const addLicense = () => {
