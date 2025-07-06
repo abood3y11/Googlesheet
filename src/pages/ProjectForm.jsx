@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useForm, Controller } from "react-hook-form";
 import {
   Box,
   Typography,
@@ -20,14 +21,15 @@ import {
   StepLabel,
   Collapse,
   IconButton,
+  Divider,
   Paper,
-  Stack,
-  Divider
+  Stack
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import {
   Save as SaveIcon,
   ArrowBack as BackIcon,
+  Business as BusinessIcon,
   Person as PersonIcon,
   AttachMoney as MoneyIcon,
   Schedule as ScheduleIcon,
@@ -35,66 +37,11 @@ import {
   CheckCircle as CheckCircleIcon,
   Add as AddIcon,
   Delete as DeleteIcon,
-  Description as DescriptionIcon,
-  Business as BusinessIcon,
-  Gavel as GavelIcon
+  Description as DescriptionIcon
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { projectsAPI } from '../services/api';
-
-const fieldStyles = {
-  '& .MuiOutlinedInput-root': {
-    borderRadius: 2,
-    height: '56px',
-    fontFamily: 'Sakkal Majalla',
-    fontSize: '1rem',
-    '&:hover .MuiOutlinedInput-notchedOutline': {
-      borderColor: 'primary.main',
-    },
-    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-      borderWidth: 2,
-      borderColor: 'primary.main',
-    }
-  },
-  '& .MuiInputLabel-root': {
-    fontFamily: 'Sakkal Majalla',
-    fontSize: '1rem',
-    fontWeight: 500,
-    '&.Mui-focused': {
-      color: 'primary.main',
-      fontWeight: 600
-    }
-  },
-  '& .MuiSelect-select': {
-    fontFamily: 'Sakkal Majalla',
-    fontSize: '1rem'
-  }
-};
-
-const textAreaStyles = {
-  '& .MuiOutlinedInput-root': {
-    borderRadius: 2,
-    fontFamily: 'Sakkal Majalla',
-    fontSize: '1rem',
-    '&:hover .MuiOutlinedInput-notchedOutline': {
-      borderColor: 'primary.main',
-    },
-    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-      borderWidth: 2,
-      borderColor: 'primary.main',
-    }
-  },
-  '& .MuiInputLabel-root': {
-    fontFamily: 'Sakkal Majalla',
-    fontSize: '1rem',
-    fontWeight: 500,
-    '&.Mui-focused': {
-      color: 'primary.main',
-      fontWeight: 600
-    }
-  }
-};
 
 const ProjectForm = () => {
   const navigate = useNavigate();
@@ -106,7 +53,13 @@ const ProjectForm = () => {
   const [success, setSuccess] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
 
-  const [formData, setFormData] = useState({
+ const { 
+  control, 
+  handleSubmit, 
+  setFocus, 
+  formState: { errors, isSubmitting } 
+} = useForm({
+  defaultValues: {
     project_name: '',
     beneficiary_organization: '',
     university_project_manager: '',
@@ -117,15 +70,14 @@ const ProjectForm = () => {
     executing_company_representative: '',
     authorization_number: '',
     project_authorization_date: null,
-    authorization_date: null,
-    authorization_notes: '',
     project_cost: '',
     purchase_order_number: '',
     charter_preparation_date: null,
     project_start_date: null,
-    type_of_project_start: 'from_contract',
+    type_of_project_start: 'immediate',
     project_duration_days: '',
     planned_project_end_date: null,
+    actual_project_end_date: null,
     site_handover_date: null,
     contract_signing_date: null,
     project_status: 'planning',
@@ -133,25 +85,17 @@ const ProjectForm = () => {
     suspension_duration: '',
     project_resumption_date: null,
     notes: '',
-  });
+  }
+});
 
   const [licenses, setLicenses] = useState([]);
-
   const steps = [
     { label: 'المعلومات الأساسية', icon: <AssignmentIcon /> },
     { label: 'الفرق والمسؤوليات', icon: <PersonIcon /> },
-    { label: 'بيانات التعميد', icon: <GavelIcon /> },
     { label: 'المعلومات المالية', icon: <MoneyIcon /> },
     { label: 'الجدول الزمني', icon: <ScheduleIcon /> },
     { label: 'بيانات الرخص', icon: <DescriptionIcon /> },
   ];
-
-  const handleInputChange = useCallback((field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  }, []);
 
   useEffect(() => {
     if (isEdit) {
@@ -163,25 +107,26 @@ const ProjectForm = () => {
     try {
       setLoading(true);
       const project = await projectsAPI.getProjectById(id);
+      
       const formattedProject = { ...project };
       const dateFields = [
         'project_authorization_date',
-        'authorization_date',
         'charter_preparation_date',
         'project_start_date',
         'planned_project_end_date',
+        'actual_project_end_date',
         'site_handover_date',
         'contract_signing_date',
         'project_suspension_date',
         'project_resumption_date',
       ];
-
+      
       dateFields.forEach(field => {
         if (formattedProject[field]) {
           formattedProject[field] = dayjs(formattedProject[field]);
         }
       });
-
+      
       setFormData(formattedProject);
       
       // Load licenses if they exist
@@ -198,6 +143,13 @@ const ProjectForm = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleInputChange = (field, value) => {
+    setFormData(prevData => ({
+      ...prevData,
+      [field]: value
+    }));
   };
 
   // Helper functions for calculations
@@ -272,9 +224,9 @@ const ProjectForm = () => {
       i === index ? { ...license, [field]: value } : license
     ));
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     try {
       setLoading(true);
       setError(null);
@@ -282,16 +234,16 @@ const ProjectForm = () => {
       const submitData = { ...formData };
       const dateFields = [
         'project_authorization_date',
-        'authorization_date',
         'charter_preparation_date',
         'project_start_date',
         'planned_project_end_date',
+        'actual_project_end_date',
         'site_handover_date',
         'contract_signing_date',
         'project_suspension_date',
         'project_resumption_date',
       ];
-
+      
       dateFields.forEach(field => {
         if (submitData[field] && dayjs.isDayjs(submitData[field])) {
           submitData[field] = submitData[field].format('YYYY-MM-DD');
@@ -321,17 +273,17 @@ const ProjectForm = () => {
       });
       
       submitData.licenses = formattedLicenses;
-
       if (isEdit) {
         await projectsAPI.updateProject(id, submitData);
       } else {
         await projectsAPI.createProject(submitData);
       }
-
+      
       setSuccess(true);
       setTimeout(() => {
         navigate('/projects');
       }, 2000);
+      
     } catch (err) {
       setError(err.message);
     } finally {
@@ -361,6 +313,60 @@ const ProjectForm = () => {
     'سارة المقرن',
     'عمار القحطاني'
   ];
+
+  // Common styles for all form fields
+  const fieldStyles = {
+    '& .MuiOutlinedInput-root': {
+      borderRadius: 2,
+      height: '56px',
+      fontFamily: 'Sakkal Majalla',
+      fontSize: '1rem',
+      '&:hover .MuiOutlinedInput-notchedOutline': {
+        borderColor: 'primary.main',
+      },
+      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+        borderWidth: 2,
+        borderColor: 'primary.main',
+      }
+    },
+    '& .MuiInputLabel-root': {
+      fontFamily: 'Sakkal Majalla',
+      fontSize: '1rem',
+      fontWeight: 500,
+      '&.Mui-focused': {
+        color: 'primary.main',
+        fontWeight: 600
+      }
+    },
+    '& .MuiSelect-select': {
+      fontFamily: 'Sakkal Majalla',
+      fontSize: '1rem'
+    }
+  };
+
+  const textAreaStyles = {
+    '& .MuiOutlinedInput-root': {
+      borderRadius: 2,
+      fontFamily: 'Sakkal Majalla',
+      fontSize: '1rem',
+      '&:hover .MuiOutlinedInput-notchedOutline': {
+        borderColor: 'primary.main',
+      },
+      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+        borderWidth: 2,
+        borderColor: 'primary.main',
+      }
+    },
+    '& .MuiInputLabel-root': {
+      fontFamily: 'Sakkal Majalla',
+      fontSize: '1rem',
+      fontWeight: 500,
+      '&.Mui-focused': {
+        color: 'primary.main',
+        fontWeight: 600
+      }
+    }
+  };
 
   const FormSection = ({ title, icon, children, step, gradient }) => (
     <Collapse in={activeStep === step} timeout={500}>
@@ -503,7 +509,6 @@ const ProjectForm = () => {
       </Grid>
     </Paper>
   );
-
   if (loading && isEdit) {
     return (
       <Box sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3 } }}>
@@ -833,58 +838,11 @@ const ProjectForm = () => {
               </Grid>
             </FormSection>
 
-            {/* Step 3: Authorization Data */}
-            <FormSection
-              title="بيانات التعميد"
-              icon={<GavelIcon />}
-              step={2}
-              gradient="linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)"
-            >
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="رقم التعميد"
-                    value={formData.authorization_number}
-                    onChange={(e) => handleInputChange('authorization_number', e.target.value)}
-                    sx={fieldStyles}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <DatePicker
-                    label="تاريخ التعميد"
-                    value={formData.authorization_date}
-                    onChange={(date) => handleInputChange('authorization_date', date)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        fullWidth
-                        sx={fieldStyles}
-                      />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="ملاحظات التعميد"
-                    value={formData.authorization_notes}
-                    onChange={(e) => handleInputChange('authorization_notes', e.target.value)}
-                    multiline
-                    rows={4}
-                    sx={textAreaStyles}
-                  />
-                </Grid>
-              </Grid>
-            </FormSection>
-
-            {/* Step 4: Financial Information */}
+            {/* Step 3: Financial Information */}
             <FormSection
               title="المعلومات المالية"
               icon={<MoneyIcon />}
-              step={3}
+              step={2}
               gradient="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
             >
               <Grid container spacing={3}>
@@ -911,6 +869,16 @@ const ProjectForm = () => {
                 </Grid>
 
                 <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="رقم التفويض"
+                    value={formData.authorization_number}
+                    onChange={(e) => handleInputChange('authorization_number', e.target.value)}
+                    sx={fieldStyles}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
                   <DatePicker
                     label="تاريخ تفويض المشروع"
                     value={formData.project_authorization_date}
@@ -924,30 +892,15 @@ const ProjectForm = () => {
                     )}
                   />
                 </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <DatePicker
-                    label="تاريخ إعداد الميثاق"
-                    value={formData.charter_preparation_date}
-                    onChange={(date) => handleInputChange('charter_preparation_date', date)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        fullWidth
-                        sx={fieldStyles}
-                      />
-                    )}
-                  />
-                </Grid>
               </Grid>
             </FormSection>
 
-            {/* Step 5: Timeline */}
+            {/* Step 4: Timeline */}
             <FormSection
               title="الجدول الزمني"
               icon={<ScheduleIcon />}
-              step={4}
-              gradient="linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)"
+              step={3}
+              gradient="linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)"
             >
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
@@ -1043,6 +996,21 @@ const ProjectForm = () => {
                   />
                 </Grid>
 
+                <Grid item xs={12} md={6}>
+                  <DatePicker
+                    label="تاريخ إعداد الميثاق"
+                    value={formData.charter_preparation_date}
+                    onChange={(date) => handleInputChange('charter_preparation_date', date)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        fullWidth
+                        sx={fieldStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+
                 <Grid item xs={12}>
                   <Box sx={{
                     p: 3,
@@ -1079,12 +1047,12 @@ const ProjectForm = () => {
               </Grid>
             </FormSection>
 
-            {/* Step 6: License Data */}
+            {/* Step 5: License Data */}
             <FormSection
               title="بيانات الرخص"
               icon={<DescriptionIcon />}
-              step={5}
-              gradient="linear-gradient(135deg, #ef4444 0%, #dc2626 100%)"
+              step={4}
+              gradient="linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)"
             >
               <Box>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
@@ -1107,10 +1075,10 @@ const ProjectForm = () => {
                       px: 3,
                       py: 1.5,
                       fontWeight: 600,
-                      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                      background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
                       fontFamily: 'Sakkal Majalla',
                       '&:hover': {
-                        background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                        background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
                         transform: 'translateY(-1px)'
                       }
                     }}
@@ -1161,7 +1129,6 @@ const ProjectForm = () => {
                 )}
               </Box>
             </FormSection>
-
             {/* Action Buttons */}
             <Card sx={{
               borderRadius: 3,
