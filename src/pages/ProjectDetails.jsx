@@ -440,54 +440,6 @@ const ProjectDetails = () => {
 
           {/* Content Grid */}
           <Grid container spacing={3}>
-            {/* License Information */}
-            <Grid item xs={12} lg={6}>
-              <InfoCard
-                title="بيانات الرخصة"
-                icon={<AssignmentIcon />}
-                gradient="linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)"
-              >
-                <Stack spacing={2}>
-                  <DetailItem
-                    label="تاريخ بداية الرخصة"
-                    value={formatDate(project.license_start_date)}
-                    icon={<CalendarIcon fontSize="small" />}
-                  />
-                  <DetailItem
-                    label="تاريخ انتهاء الرخصة"
-                    value={formatDate(project.license_end_date)}
-                    icon={<CalendarIcon fontSize="small" />}
-                  />
-                  <DetailItem
-                    label="حالة الرخصة"
-                    value={
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <Box
-                          sx={{
-                            width: 12,
-                            height: 12,
-                            borderRadius: '50%',
-                            bgcolor: project.has_license ? '#10b981' : '#ef4444'
-                          }}
-                        />
-                        <Typography sx={{ fontFamily: 'Sakkal Majalla' }}>
-                          {project.has_license ? 'يوجد رخصة' : 'لا يوجد رخصة'}
-                        </Typography>
-                      </Box>
-                    }
-                    icon={<InfoIcon fontSize="small" />}
-                  />
-                  {project.license_notes && (
-                    <DetailItem
-                      label="ملاحظات الرخصة"
-                      value={project.license_notes}
-                      icon={<DescriptionIcon fontSize="small" />}
-                    />
-                  )}
-                </Stack>
-              </InfoCard>
-            </Grid>
-
             {/* Basic Information */}
             <Grid item xs={12} lg={6}>
               <InfoCard

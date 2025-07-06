@@ -46,12 +46,6 @@ const ProjectForm = () => {
   const [activeStep, setActiveStep] = useState(0);
 
   const [formData, setFormData] = useState({
-    // License data
-    license_start_date: null,
-    license_end_date: null,
-    has_license: false,
-    license_notes: '',
-    // Project data
     project_name: '',
     beneficiary_organization: '',
     university_project_manager: '',
@@ -80,7 +74,6 @@ const ProjectForm = () => {
   });
 
   const steps = [
-    { label: 'بيانات الرخصة', icon: <AssignmentIcon /> },
     { label: 'المعلومات الأساسية', icon: <AssignmentIcon /> },
     { label: 'الفرق والمسؤوليات', icon: <PersonIcon /> },
     { label: 'المعلومات المالية', icon: <MoneyIcon /> },
@@ -100,8 +93,6 @@ const ProjectForm = () => {
       
       const formattedProject = { ...project };
       const dateFields = [
-        'license_start_date',
-        'license_end_date',
         'project_authorization_date',
         'charter_preparation_date',
         'project_start_date',
@@ -143,8 +134,6 @@ const ProjectForm = () => {
       
       const submitData = { ...formData };
       const dateFields = [
-        'license_start_date',
-        'license_end_date',
         'project_authorization_date',
         'charter_preparation_date',
         'project_start_date',
@@ -159,8 +148,6 @@ const ProjectForm = () => {
       dateFields.forEach(field => {
         if (submitData[field] && dayjs.isDayjs(submitData[field])) {
           submitData[field] = submitData[field].format('YYYY-MM-DD');
-        } else if (submitData[field] === null || submitData[field] === '') {
-          submitData[field] = null;
         }
       });
 
@@ -473,105 +460,11 @@ const ProjectForm = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit}>
-            {/* Step 0: License Information */}
-            <FormSection
-              title="بيانات الرخصة"
-              icon={<AssignmentIcon />}
-              step={0}
-              gradient="linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)"
-            >
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <DatePicker
-                    label="تاريخ بداية الرخصة"
-                    value={formData.license_start_date}
-                    onChange={(date) => handleInputChange('license_start_date', date)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        fullWidth
-                        sx={fieldStyles}
-                      />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <DatePicker
-                    label="تاريخ انتهاء الرخصة"
-                    value={formData.license_end_date}
-                    onChange={(date) => handleInputChange('license_end_date', date)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        fullWidth
-                        sx={fieldStyles}
-                      />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <FormControl fullWidth sx={fieldStyles}>
-                    <InputLabel>هل يوجد رخصة؟</InputLabel>
-                    <Select
-                      value={formData.has_license}
-                      onChange={(e) => handleInputChange('has_license', e.target.value)}
-                      label="هل يوجد رخصة؟"
-                    >
-                      <MenuItem value={true}>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <Box
-                            sx={{
-                              width: 12,
-                              height: 12,
-                              borderRadius: '50%',
-                              bgcolor: '#10b981'
-                            }}
-                          />
-                          <Typography sx={{ fontFamily: 'Sakkal Majalla' }}>
-                            نعم، يوجد رخصة
-                          </Typography>
-                        </Box>
-                      </MenuItem>
-                      <MenuItem value={false}>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <Box
-                            sx={{
-                              width: 12,
-                              height: 12,
-                              borderRadius: '50%',
-                              bgcolor: '#ef4444'
-                            }}
-                          />
-                          <Typography sx={{ fontFamily: 'Sakkal Majalla' }}>
-                            لا، لا يوجد رخصة
-                          </Typography>
-                        </Box>
-                      </MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="ملاحظات الرخصة"
-                    value={formData.license_notes}
-                    onChange={(e) => handleInputChange('license_notes', e.target.value)}
-                    multiline
-                    rows={2}
-                    sx={textAreaStyles}
-                  />
-                </Grid>
-              </Grid>
-            </FormSection>
-
             {/* Step 1: Basic Information */}
             <FormSection
               title="المعلومات الأساسية"
               icon={<AssignmentIcon />}
-              step={1}
+              step={0}
             >
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
@@ -641,7 +534,7 @@ const ProjectForm = () => {
             <FormSection
               title="الفرق والمسؤوليات"
               icon={<PersonIcon />}
-              step={2}
+              step={1}
               gradient="linear-gradient(135deg, #10b981 0%, #059669 100%)"
             >
               <Grid container spacing={3}>
@@ -713,7 +606,7 @@ const ProjectForm = () => {
             <FormSection
               title="المعلومات المالية"
               icon={<MoneyIcon />}
-              step={3}
+              step={2}
               gradient="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
             >
               <Grid container spacing={3}>
@@ -770,7 +663,7 @@ const ProjectForm = () => {
             <FormSection
               title="الجدول الزمني"
               icon={<ScheduleIcon />}
-              step={4}
+              step={3}
               gradient="linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)"
             >
               <Grid container spacing={3}>
