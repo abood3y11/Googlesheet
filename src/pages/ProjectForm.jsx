@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -13,42 +13,27 @@ import {
   Select,
   Card,
   CardContent,
-  Collapse,
-  IconButton,
+  Fade,
   Avatar,
   Stepper,
   Step,
   StepLabel,
-  Paper,
-  Stack
+  Collapse,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import {
   Save as SaveIcon,
   ArrowBack as BackIcon,
-  Assignment as AssignmentIcon,
+  Business as BusinessIcon,
   Person as PersonIcon,
   AttachMoney as MoneyIcon,
   Schedule as ScheduleIcon,
-  Description as DescriptionIcon,
-  CheckCircle as CheckCircleIcon,
-  Add as AddIcon,
-  Delete as DeleteIcon
+  Assignment as AssignmentIcon,
+  CheckCircle as CheckCircleIcon
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { projectsAPI } from '../services/api';
-
-// TextField Component (memoized to prevent re-render)
-const TextFieldWrapper = React.memo(({ field, label, value, onChange, ...props }) => (
-  <TextField
-    fullWidth
-    label={label}
-    value={value}
-    onChange={(e) => onChange(field, e.target.value)}
-    {...props}
-  />
-));
 
 const ProjectForm = () => {
   const navigate = useNavigate();
@@ -88,60 +73,24 @@ const ProjectForm = () => {
     notes: '',
   });
 
-  const [licenses, setLicenses] = useState([]);
   const steps = [
     { label: 'المعلومات الأساسية', icon: <AssignmentIcon /> },
     { label: 'الفرق والمسؤوليات', icon: <PersonIcon /> },
     { label: 'المعلومات المالية', icon: <MoneyIcon /> },
     { label: 'الجدول الزمني', icon: <ScheduleIcon /> },
-    { label: 'بيانات الرخص', icon: <DescriptionIcon /> },
   ];
 
-  // Memoized styles
-// استبدل القديم بهذا
-const fieldStyles = useMemo(() => ({
-  '& .MuiOutlinedInput-root': {
-    borderRadius: 2,
-    height: '56px',
-    fontFamily: 'Sakkal Majalla',
-    fontSize: '1rem',
-    '&:hover .MuiOutlinedInput-notchedOutline': {
-      borderColor: 'primary.main',
-    },
-    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-      borderWidth: 2,
-      borderColor: 'primary.main',
+  useEffect(() => {
+    if (isEdit) {
+      fetchProject();
     }
-  },
-  '& .MuiInputLabel-root': {
-    fontFamily: 'Sakkal Majalla',
-    fontSize: '1rem',
-    fontWeight: 500,
-    '&.Mui-focused': {
-      color: 'primary.main',
-      fontWeight: 600
-    }
-  },
-  '& .MuiSelect-select': {
-    fontFamily: 'Sakkal Majalla',
-    fontSize: '1rem'
-  }
-}), []);
+  }, [id, isEdit]);
 
-
-  // Memoized functions
-  const handleInputChange = useCallback((field, value) => {
-    setFormData(prevData => ({
-      ...prevData,
-      [field]: value
-    }));
-  }, []);
-
-  const fetchProject = useCallback(async () => {
+  const fetchProject = async () => {
     try {
       setLoading(true);
       const project = await projectsAPI.getProjectById(id);
-
+      
       const formattedProject = { ...project };
       const dateFields = [
         'project_authorization_date',
@@ -154,102 +103,35 @@ const fieldStyles = useMemo(() => ({
         'project_suspension_date',
         'project_resumption_date',
       ];
-
+      
       dateFields.forEach(field => {
         if (formattedProject[field]) {
           formattedProject[field] = dayjs(formattedProject[field]);
         }
       });
-
+      
       setFormData(formattedProject);
-
-      if (project.licenses && project.licenses.length > 0) {
-        const formattedLicenses = project.licenses.map(license => ({
-          ...license,
-          license_start_date: license.license_start_date ? dayjs(license.license_start_date) : null,
-          license_end_date: license.license_end_date ? dayjs(license.license_end_date) : null,
-        }));
-        setLicenses(formattedLicenses);
-      }
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [id]);
-
-  useEffect(() => {
-    if (isEdit) {
-      fetchProject();
-    }
-  }, [fetchProject, isEdit]);
-
-  const calculateEndDate = (startDate, duration) => {
-    if (startDate && duration) {
-      return dayjs(startDate).add(parseInt(duration), 'day');
-    }
-    return null;
   };
 
-  const calculateDuration = (startDate, endDate) => {
-    if (startDate && endDate) {
-      return dayjs(endDate).diff(dayjs(startDate), 'day');
-    }
-    return '';
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value,
+    }));
   };
-
-  const handleStartDateChange = useCallback((date) => {
-    handleInputChange('project_start_date', date);
-    if (date && formData.project_duration_days) {
-      const endDate = calculateEndDate(date, formData.project_duration_days);
-      if (endDate) handleInputChange('planned_project_end_date', endDate);
-    }
-  }, [formData.project_duration_days, handleInputChange]);
-
-  const handleDurationChange = useCallback((duration) => {
-    handleInputChange('project_duration_days', duration);
-    if (formData.project_start_date && duration) {
-      const endDate = calculateEndDate(formData.project_start_date, duration);
-      if (endDate) handleInputChange('planned_project_end_date', endDate);
-    }
-  }, [formData.project_start_date, handleInputChange]);
-
-  const handleEndDateChange = useCallback((date) => {
-    handleInputChange('planned_project_end_date', date);
-    if (formData.project_start_date && date) {
-      const duration = calculateDuration(formData.project_start_date, date);
-      if (duration > 0) handleInputChange('project_duration_days', duration.toString());
-    }
-  }, [formData.project_start_date, handleInputChange]);
-
-  const addLicense = useCallback(() => {
-    const newLicense = {
-      id: Date.now(),
-      license_number: '',
-      license_name: '',
-      license_start_date: null,
-      license_end_date: null,
-      notes: '',
-    };
-    setLicenses(prev => [...prev, newLicense]);
-  }, []);
-
-  const removeLicense = useCallback((index) => {
-    setLicenses(prev => prev.filter((_, i) => i !== index));
-  }, []);
-
-  const updateLicense = useCallback((index, field, value) => {
-    setLicenses(prev => prev.map((license, i) =>
-      i === index ? { ...license, [field]: value } : license
-    ));
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     try {
       setLoading(true);
       setError(null);
-
+      
       const submitData = { ...formData };
       const dateFields = [
         'project_authorization_date',
@@ -262,36 +144,40 @@ const fieldStyles = useMemo(() => ({
         'project_suspension_date',
         'project_resumption_date',
       ];
-
+      
       dateFields.forEach(field => {
         if (submitData[field] && dayjs.isDayjs(submitData[field])) {
           submitData[field] = submitData[field].format('YYYY-MM-DD');
         }
       });
 
-      submitData.licenses = licenses.map(license => ({
-        ...license,
-        license_start_date: license.license_start_date ? license.license_start_date.format('YYYY-MM-DD') : null,
-        license_end_date: license.license_end_date ? license.license_end_date.format('YYYY-MM-DD') : null,
-      }));
+      if (submitData.project_cost) {
+        submitData.project_cost = parseFloat(submitData.project_cost);
+      }
+      if (submitData.project_duration_days) {
+        submitData.project_duration_days = parseInt(submitData.project_duration_days);
+      }
+      if (submitData.suspension_duration) {
+        submitData.suspension_duration = parseInt(submitData.suspension_duration);
+      }
 
       if (isEdit) {
         await projectsAPI.updateProject(id, submitData);
       } else {
         await projectsAPI.createProject(submitData);
       }
-
+      
       setSuccess(true);
-      setTimeout(() => navigate('/projects'), 2000);
+      setTimeout(() => {
+        navigate('/projects');
+      }, 2000);
+      
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
-
-  // --- Rest of the UI as it is --- (keep all your UI code here)
-
 
   const projectStatuses = [
     { value: 'planning', label: 'تخطيط', color: '#3b82f6' },
@@ -302,18 +188,9 @@ const fieldStyles = useMemo(() => ({
   ];
 
   const projectStartTypes = [
-    { value: 'from_contract', label: 'من توقيع العقد' },
-    { value: 'from_authorization', label: 'من التعميد' },
-    { value: 'from_site_handover', label: 'من استلام الموقع' },
-  ];
-
-  const universityProjectManagers = [
-    'محمد الشهري',
-    'نجلاء الحمَيد', 
-    'نوف الفارس',
-    'يوسف العنزي',
-    'سارة المقرن',
-    'عمار القحطاني'
+    { value: 'immediate', label: 'فوري' },
+    { value: 'scheduled', label: 'مجدول' },
+    { value: 'conditional', label: 'مشروط' },
   ];
 
   // Common styles for all form fields
@@ -411,106 +288,6 @@ const fieldStyles = useMemo(() => ({
     </Collapse>
   );
 
-  const LicenseCard = ({ license, index }) => (
-    <Paper sx={{
-      p: 3,
-      borderRadius: 3,
-      border: '2px solid #e5e7eb',
-      position: 'relative',
-      '&:hover': {
-        borderColor: 'primary.main',
-        boxShadow: '0 4px 20px rgba(102, 126, 234, 0.15)'
-      }
-    }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography 
-          variant="h6" 
-          sx={{ 
-            fontWeight: 700,
-            color: 'primary.main',
-            fontFamily: 'Sakkal Majalla'
-          }}
-        >
-          الرخصة #{index + 1}
-        </Typography>
-        <IconButton
-          onClick={() => removeLicense(index)}
-          sx={{
-            color: 'error.main',
-            '&:hover': {
-              bgcolor: 'error.50'
-            }
-          }}
-        >
-          <DeleteIcon />
-        </IconButton>
-      </Box>
-      
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="رقم الرخصة"
-            value={license.license_number}
-            onChange={(e) => updateLicense(index, 'license_number', e.target.value)}
-            sx={fieldStyles}
-          />
-        </Grid>
-        
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="اسم الرخصة"
-            value={license.license_name}
-            onChange={(e) => updateLicense(index, 'license_name', e.target.value)}
-            sx={fieldStyles}
-          />
-        </Grid>
-        
-        <Grid item xs={12} md={6}>
-          <DatePicker
-            label="تاريخ بداية الرخصة"
-            value={license.license_start_date}
-            onChange={(date) => updateLicense(index, 'license_start_date', date)}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                fullWidth
-                sx={fieldStyles}
-              />
-            )}
-          />
-        </Grid>
-        
-        <Grid item xs={12} md={6}>
-          <DatePicker
-            label="تاريخ انتهاء الرخصة"
-            value={license.license_end_date}
-            onChange={(date) => updateLicense(index, 'license_end_date', date)}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                fullWidth
-                sx={fieldStyles}
-              />
-            )}
-          />
-        </Grid>
-        
-        <Grid item xs={12}>
-          <TextField
-            fullWidth
-            label="ملاحظات الرخصة"
-            value={license.notes}
-            onChange={(e) => updateLicense(index, 'notes', e.target.value)}
-            multiline
-            rows={3}
-            sx={textAreaStyles}
-          />
-        </Grid>
-      </Grid>
-    </Paper>
-  );
   if (loading && isEdit) {
     return (
       <Box sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3 } }}>
@@ -768,23 +545,8 @@ const fieldStyles = useMemo(() => ({
                     value={formData.university_project_manager}
                     onChange={(e) => handleInputChange('university_project_manager', e.target.value)}
                     required
-                    select
-                    sx={{
-                      ...fieldStyles,
-                      '& .MuiSelect-select': {
-                        fontFamily: 'Sakkal Majalla',
-                        fontSize: '1rem'
-                      }
-                    }}
-                  >
-                    {universityProjectManagers.map((manager) => (
-                      <MenuItem key={manager} value={manager}>
-                        <Typography sx={{ fontFamily: 'Sakkal Majalla' }}>
-                          {manager}
-                        </Typography>
-                      </MenuItem>
-                    ))}
-                  </TextField>
+                    sx={fieldStyles}
+                  />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
@@ -807,6 +569,7 @@ const fieldStyles = useMemo(() => ({
                   />
                 </Grid>
 
+                
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
@@ -909,7 +672,7 @@ const fieldStyles = useMemo(() => ({
                   <DatePicker
                     label="تاريخ بداية المشروع"
                     value={formData.project_start_date}
-                    onChange={handleStartDateChange}
+                    onChange={(date) => handleInputChange('project_start_date', date)}
                     renderInput={(params) => (
                       <TextField
                         {...params}
@@ -946,9 +709,8 @@ const fieldStyles = useMemo(() => ({
                     label="مدة المشروع (أيام)"
                     type="number"
                     value={formData.project_duration_days}
-                    onChange={(e) => handleDurationChange(e.target.value)}
+                    onChange={(e) => handleInputChange('project_duration_days', e.target.value)}
                     sx={fieldStyles}
-                    helperText="سيتم حساب تاريخ الانتهاء تلقائياً"
                   />
                 </Grid>
 
@@ -956,13 +718,27 @@ const fieldStyles = useMemo(() => ({
                   <DatePicker
                     label="تاريخ انتهاء المشروع المخطط"
                     value={formData.planned_project_end_date}
-                    onChange={handleEndDateChange}
+                    onChange={(date) => handleInputChange('planned_project_end_date', date)}
                     renderInput={(params) => (
                       <TextField
                         {...params}
                         fullWidth
                         sx={fieldStyles}
-                        helperText="سيتم حساب المدة تلقائياً"
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <DatePicker
+                    label="تاريخ انتهاء المشروع الفعلي"
+                    value={formData.actual_project_end_date}
+                    onChange={(date) => handleInputChange('actual_project_end_date', date)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        fullWidth
+                        sx={fieldStyles}
                       />
                     )}
                   />
@@ -1012,125 +788,9 @@ const fieldStyles = useMemo(() => ({
                     )}
                   />
                 </Grid>
-
-                <Grid item xs={12}>
-                  <Box sx={{
-                    p: 3,
-                    borderRadius: 3,
-                    bgcolor: 'info.50',
-                    border: '1px solid',
-                    borderColor: 'info.200'
-                  }}>
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        fontWeight: 600,
-                        color: 'info.main',
-                        fontFamily: 'Sakkal Majalla',
-                        mb: 1
-                      }}
-                    >
-                      ملاحظة هامة:
-                    </Typography>
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        color: 'info.dark',
-                        fontFamily: 'Sakkal Majalla',
-                        lineHeight: 1.6
-                      }}
-                    >
-                      • تاريخ انتهاء المشروع الفعلي يتم حسابه تلقائياً من النظام<br/>
-                      • عند إدخال تاريخ البداية والمدة، سيتم حساب تاريخ الانتهاء المخطط تلقائياً<br/>
-                      • عند إدخال تاريخ البداية والانتهاء المخطط، سيتم حساب المدة تلقائياً
-                    </Typography>
-                  </Box>
-                </Grid>
               </Grid>
             </FormSection>
 
-            {/* Step 5: License Data */}
-            <FormSection
-              title="بيانات الرخص"
-              icon={<DescriptionIcon />}
-              step={4}
-              gradient="linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)"
-            >
-              <Box>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-                  <Typography 
-                    variant="h6" 
-                    sx={{ 
-                      fontWeight: 600,
-                      color: 'text.primary',
-                      fontFamily: 'Sakkal Majalla'
-                    }}
-                  >
-                    إدارة رخص المشروع
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={addLicense}
-                    sx={{
-                      borderRadius: 3,
-                      px: 3,
-                      py: 1.5,
-                      fontWeight: 600,
-                      background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
-                      fontFamily: 'Sakkal Majalla',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
-                        transform: 'translateY(-1px)'
-                      }
-                    }}
-                  >
-                    إضافة رخصة
-                  </Button>
-                </Box>
-
-                {licenses.length === 0 ? (
-                  <Box 
-                    sx={{
-                      textAlign: 'center',
-                      py: 6,
-                      border: '2px dashed #d1d5db',
-                      borderRadius: 3,
-                      bgcolor: '#f9fafb'
-                    }}
-                  >
-                    <DescriptionIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                    <Typography 
-                      variant="h6" 
-                      color="text.secondary" 
-                      sx={{ 
-                        mb: 1,
-                        fontFamily: 'Sakkal Majalla'
-                      }}
-                    >
-                      لا توجد رخص مضافة
-                    </Typography>
-                    <Typography 
-                      variant="body2" 
-                      color="text.secondary"
-                      sx={{ fontFamily: 'Sakkal Majalla' }}
-                    >
-                      اضغط على "إضافة رخصة" لبدء إضافة رخص المشروع
-                    </Typography>
-                  </Box>
-                ) : (
-                  <Stack spacing={3}>
-                    {licenses.map((license, index) => (
-                      <LicenseCard 
-                        key={license.id || index} 
-                        license={license} 
-                        index={index} 
-                      />
-                    ))}
-                  </Stack>
-                )}
-              </Box>
-            </FormSection>
             {/* Action Buttons */}
             <Card sx={{
               borderRadius: 3,
