@@ -78,18 +78,12 @@ const ProjectForm = () => {
     suspension_duration: '',
     project_resumption_date: null,
     notes: '',
-    authorization_data: {
-      authorization_number: '',
-      authorization_date: null,
-      authorization_notes: '',
-    },
   });
 
   const [licenses, setLicenses] = useState([]);
   const steps = [
     { label: 'المعلومات الأساسية', icon: <AssignmentIcon /> },
     { label: 'الفرق والمسؤوليات', icon: <PersonIcon /> },
-    { label: 'بيانات التعميد', icon: <AssignmentIcon /> },
     { label: 'المعلومات المالية', icon: <MoneyIcon /> },
     { label: 'الجدول الزمني', icon: <ScheduleIcon /> },
     { label: 'بيانات الرخص', icon: <DescriptionIcon /> },
@@ -125,11 +119,6 @@ const ProjectForm = () => {
         }
       });
       
-      // Format authorization date if exists
-      if (formattedProject.authorization_data?.authorization_date) {
-        formattedProject.authorization_data.authorization_date = dayjs(formattedProject.authorization_data.authorization_date);
-      }
-      
       setFormData(formattedProject);
       
       // Load licenses if they exist
@@ -149,10 +138,11 @@ const ProjectForm = () => {
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
+    setFormData(prevData => {
+      const newData = { ...prevData };
+      newData[field] = value;
+      return newData;
+    });
   };
 
   const addLicense = () => {
@@ -225,12 +215,6 @@ const ProjectForm = () => {
       });
       
       submitData.licenses = formattedLicenses;
-      
-      // Format authorization date
-      if (submitData.authorization_data?.authorization_date && dayjs.isDayjs(submitData.authorization_data.authorization_date)) {
-        submitData.authorization_data.authorization_date = submitData.authorization_data.authorization_date.format('YYYY-MM-DD');
-      }
-      
       if (isEdit) {
         await projectsAPI.updateProject(id, submitData);
       } else {
@@ -258,11 +242,46 @@ const ProjectForm = () => {
   ];
 
   const projectStartTypes = [
-    { value: 'immediate', label: 'فوري' },
-    { value: 'scheduled', label: 'مجدول' },
-    { value: 'conditional', label: 'مشروط' },
+    { value: 'from_contract', label: 'من توقيع العقد' },
+    { value: 'from_authorization', label: 'من التعميد' },
+    { value: 'from_site_handover', label: 'من استلام الموقع' },
   ];
 
+  const universityProjectManagers = [
+    'محمد الشهري',
+    'نجلاء الحمَيد', 
+    'نوف الفارس',
+    'يوسف العنزي',
+    'سارة المقرن',
+    'عمار القحطاني'
+  ];
+
+  // Calculate planned end date when start date or duration changes
+  useEffect(() => {
+    if (formData.project_start_date && formData.project_duration_days) {
+      const startDate = dayjs(formData.project_start_date);
+      const endDate = startDate.add(parseInt(formData.project_duration_days), 'day');
+      setFormData(prev => ({
+        ...prev,
+        planned_project_end_date: endDate
+      }));
+    }
+  }, [formData.project_start_date, formData.project_duration_days]);
+
+  // Calculate duration when start date and end date change
+  useEffect(() => {
+    if (formData.project_start_date && formData.planned_project_end_date) {
+      const startDate = dayjs(formData.project_start_date);
+      const endDate = dayjs(formData.planned_project_end_date);
+      const duration = endDate.diff(startDate, 'day');
+      if (duration > 0 && duration !== parseInt(formData.project_duration_days)) {
+        setFormData(prev => ({
+          ...prev,
+          project_duration_days: duration.toString()
+        }));
+      }
+    }
+  }, [formData.project_start_date, formData.planned_project_end_date]);
   // Common styles for all form fields
   const fieldStyles = {
     '& .MuiOutlinedInput-root': {
@@ -715,8 +734,23 @@ const ProjectForm = () => {
                     value={formData.university_project_manager}
                     onChange={(e) => handleInputChange('university_project_manager', e.target.value)}
                     required
-                    sx={fieldStyles}
-                  />
+                    select
+                    sx={{
+                      ...fieldStyles,
+                      '& .MuiSelect-select': {
+                        fontFamily: 'Sakkal Majalla',
+                        fontSize: '1rem'
+                      }
+                    }}
+                  >
+                    {universityProjectManagers.map((manager) => (
+                      <MenuItem key={manager} value={manager}>
+                        <Typography sx={{ fontFamily: 'Sakkal Majalla' }}>
+                          {manager}
+                        </Typography>
+                      </MenuItem>
+                    ))}
+                  </TextField>
                 </Grid>
 
                 <Grid item xs={12} md={6}>
@@ -772,67 +806,11 @@ const ProjectForm = () => {
               </Grid>
             </FormSection>
 
-            {/* Step 3: Authorization Data */}
-            <FormSection
-              title="بيانات التعميد"
-              icon={<AssignmentIcon />}
-              step={2}
-              gradient="linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)"
-            >
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="رقم التعميد"
-                    value={formData.authorization_data?.authorization_number || ''}
-                    onChange={(e) => handleInputChange('authorization_data', {
-                      ...formData.authorization_data,
-                      authorization_number: e.target.value
-                    })}
-                    sx={fieldStyles}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <DatePicker
-                    label="تاريخ التعميد"
-                    value={formData.authorization_data?.authorization_date || null}
-                    onChange={(date) => handleInputChange('authorization_data', {
-                      ...formData.authorization_data,
-                      authorization_date: date
-                    })}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        fullWidth
-                        sx={fieldStyles}
-                      />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="ملاحظات التعميد"
-                    value={formData.authorization_data?.authorization_notes || ''}
-                    onChange={(e) => handleInputChange('authorization_data', {
-                      ...formData.authorization_data,
-                      authorization_notes: e.target.value
-                    })}
-                    multiline
-                    rows={4}
-                    sx={textAreaStyles}
-                  />
-                </Grid>
-              </Grid>
-            </FormSection>
-
-            {/* Step 4: Financial Information */}
+            {/* Step 3: Financial Information */}
             <FormSection
               title="المعلومات المالية"
               icon={<MoneyIcon />}
-              step={3}
+              step={2}
               gradient="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
             >
               <Grid container spacing={3}>
@@ -885,11 +863,11 @@ const ProjectForm = () => {
               </Grid>
             </FormSection>
 
-            {/* Step 5: Timeline */}
+            {/* Step 4: Timeline */}
             <FormSection
               title="الجدول الزمني"
               icon={<ScheduleIcon />}
-              step={4}
+              step={3}
               gradient="linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)"
             >
               <Grid container spacing={3}>
@@ -936,6 +914,7 @@ const ProjectForm = () => {
                     value={formData.project_duration_days}
                     onChange={(e) => handleInputChange('project_duration_days', e.target.value)}
                     sx={fieldStyles}
+                    helperText="سيتم حساب تاريخ الانتهاء تلقائياً"
                   />
                 </Grid>
 
@@ -949,21 +928,7 @@ const ProjectForm = () => {
                         {...params}
                         fullWidth
                         sx={fieldStyles}
-                      />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <DatePicker
-                    label="تاريخ انتهاء المشروع الفعلي"
-                    value={formData.actual_project_end_date}
-                    onChange={(date) => handleInputChange('actual_project_end_date', date)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        fullWidth
-                        sx={fieldStyles}
+                        helperText="سيتم حساب المدة تلقائياً"
                       />
                     )}
                   />
@@ -1013,14 +978,48 @@ const ProjectForm = () => {
                     )}
                   />
                 </Grid>
+
+                <Grid item xs={12}>
+                  <Box sx={{
+                    p: 3,
+                    borderRadius: 3,
+                    bgcolor: 'info.50',
+                    border: '1px solid',
+                    borderColor: 'info.200'
+                  }}>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        fontWeight: 600,
+                        color: 'info.main',
+                        fontFamily: 'Sakkal Majalla',
+                        mb: 1
+                      }}
+                    >
+                      ملاحظة هامة:
+                    </Typography>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: 'info.dark',
+                        fontFamily: 'Sakkal Majalla',
+                        lineHeight: 1.6
+                      }}
+                    >
+                      • تاريخ انتهاء المشروع الفعلي يتم حسابه تلقائياً من النظام<br/>
+                      • عند إدخال تاريخ البداية والمدة، سيتم حساب تاريخ الانتهاء المخطط تلقائياً<br/>
+                      • عند إدخال تاريخ البداية والانتهاء المخطط، سيتم حساب المدة تلقائياً
+                    </Typography>
+                  </Box>
+                </Grid>
               </Grid>
             </FormSection>
 
-            {/* Step 6: License Data */}
+            {/* Step 5: License Data */}
             <FormSection
               title="بيانات الرخص"
               icon={<DescriptionIcon />}
-              step={5}
+              step={4}
               gradient="linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)"
             >
               <Box>
