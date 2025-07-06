@@ -98,34 +98,36 @@ const ProjectForm = () => {
   ];
 
   // Memoized styles
-  const fieldStyles = useMemo(() => ({
-    '& .MuiOutlinedInput-root': {
-      borderRadius: 2,
-      height: '56px',
-      fontFamily: 'Sakkal Majalla',
-      fontSize: '1rem',
-      '&:hover .MuiOutlinedInput-notchedOutline': {
-        borderColor: 'primary.main',
-      },
-      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-        borderWidth: 2,
-        borderColor: 'primary.main',
-      }
+// استبدل القديم بهذا
+const fieldStyles = useMemo(() => ({
+  '& .MuiOutlinedInput-root': {
+    borderRadius: 2,
+    height: '56px',
+    fontFamily: 'Sakkal Majalla',
+    fontSize: '1rem',
+    '&:hover .MuiOutlinedInput-notchedOutline': {
+      borderColor: 'primary.main',
     },
-    '& .MuiInputLabel-root': {
-      fontFamily: 'Sakkal Majalla',
-      fontSize: '1rem',
-      fontWeight: 500,
-      '&.Mui-focused': {
-        color: 'primary.main',
-        fontWeight: 600
-      }
-    },
-    '& .MuiSelect-select': {
-      fontFamily: 'Sakkal Majalla',
-      fontSize: '1rem'
+    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+      borderWidth: 2,
+      borderColor: 'primary.main',
     }
-  }), []);
+  },
+  '& .MuiInputLabel-root': {
+    fontFamily: 'Sakkal Majalla',
+    fontSize: '1rem',
+    fontWeight: 500,
+    '&.Mui-focused': {
+      color: 'primary.main',
+      fontWeight: 600
+    }
+  },
+  '& .MuiSelect-select': {
+    fontFamily: 'Sakkal Majalla',
+    fontSize: '1rem'
+  }
+}), []);
+
 
   // Memoized functions
   const handleInputChange = useCallback((field, value) => {
