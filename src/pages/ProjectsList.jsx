@@ -1112,34 +1112,7 @@ const ProjectsList = () => {
 
           {/* View Toggle */}
           <Box display="flex" justifyContent="center" mb={4}>
-            <TextField
-    placeholder="ابحث عن مشروع..."
-    value={searchQuery}
-    onChange={(e) => setSearchQuery(e.target.value)}
-    sx={{
-      width: { xs: '100%', sm: '300px' },
-      '& .MuiOutlinedInput-root': {
-        borderRadius: 3,
-        height: '48px',
-        fontFamily: 'Sakkal Majalla',
-        fontSize: '1rem',
-        '&:hover .MuiOutlinedInput-notchedOutline': {
-          borderColor: 'primary.main',
-        },
-        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-          borderWidth: 2,
-          borderColor: 'primary.main',
-        },
-      },
-      '& .MuiInputLabel-root': {
-        fontFamily: 'Sakkal Majalla',
-        fontSize: '1rem',
-        '&.Mui-focused': {
-          color: 'primary.main',
-        },
-      },
-    }}
-  />
+          
             <ToggleButtonGroup
               value={viewMode}
               exclusive
