@@ -19,6 +19,10 @@ import {
   Step,
   StepLabel,
   Collapse,
+  IconButton,
+  Divider,
+  Paper,
+  Stack
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import {
@@ -29,7 +33,10 @@ import {
   AttachMoney as MoneyIcon,
   Schedule as ScheduleIcon,
   Assignment as AssignmentIcon,
-  CheckCircle as CheckCircleIcon
+  CheckCircle as CheckCircleIcon,
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  Description as DescriptionIcon
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -73,11 +80,13 @@ const ProjectForm = () => {
     notes: '',
   });
 
+  const [licenses, setLicenses] = useState([]);
   const steps = [
     { label: 'المعلومات الأساسية', icon: <AssignmentIcon /> },
     { label: 'الفرق والمسؤوليات', icon: <PersonIcon /> },
     { label: 'المعلومات المالية', icon: <MoneyIcon /> },
     { label: 'الجدول الزمني', icon: <ScheduleIcon /> },
+    { label: 'بيانات الرخص', icon: <DescriptionIcon /> },
   ];
 
   useEffect(() => {
@@ -111,6 +120,16 @@ const ProjectForm = () => {
       });
       
       setFormData(formattedProject);
+      
+      // Load licenses if they exist
+      if (project.licenses && project.licenses.length > 0) {
+        const formattedLicenses = project.licenses.map(license => ({
+          ...license,
+          license_start_date: license.license_start_date ? dayjs(license.license_start_date) : null,
+          license_end_date: license.license_end_date ? dayjs(license.license_end_date) : null,
+        }));
+        setLicenses(formattedLicenses);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -125,6 +144,27 @@ const ProjectForm = () => {
     }));
   };
 
+  const addLicense = () => {
+    const newLicense = {
+      id: Date.now(), // Temporary ID for new licenses
+      license_number: '',
+      license_name: '',
+      license_start_date: null,
+      license_end_date: null,
+      notes: '',
+    };
+    setLicenses(prev => [...prev, newLicense]);
+  };
+
+  const removeLicense = (index) => {
+    setLicenses(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateLicense = (index, field, value) => {
+    setLicenses(prev => prev.map((license, i) => 
+      i === index ? { ...license, [field]: value } : license
+    ));
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -161,6 +201,19 @@ const ProjectForm = () => {
         submitData.suspension_duration = parseInt(submitData.suspension_duration);
       }
 
+      // Format licenses data
+      const formattedLicenses = licenses.map(license => {
+        const formattedLicense = { ...license };
+        if (formattedLicense.license_start_date && dayjs.isDayjs(formattedLicense.license_start_date)) {
+          formattedLicense.license_start_date = formattedLicense.license_start_date.format('YYYY-MM-DD');
+        }
+        if (formattedLicense.license_end_date && dayjs.isDayjs(formattedLicense.license_end_date)) {
+          formattedLicense.license_end_date = formattedLicense.license_end_date.format('YYYY-MM-DD');
+        }
+        return formattedLicense;
+      });
+      
+      submitData.licenses = formattedLicenses;
       if (isEdit) {
         await projectsAPI.updateProject(id, submitData);
       } else {
@@ -288,6 +341,106 @@ const ProjectForm = () => {
     </Collapse>
   );
 
+  const LicenseCard = ({ license, index }) => (
+    <Paper sx={{
+      p: 3,
+      borderRadius: 3,
+      border: '2px solid #e5e7eb',
+      position: 'relative',
+      '&:hover': {
+        borderColor: 'primary.main',
+        boxShadow: '0 4px 20px rgba(102, 126, 234, 0.15)'
+      }
+    }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            fontWeight: 700,
+            color: 'primary.main',
+            fontFamily: 'Sakkal Majalla'
+          }}
+        >
+          الرخصة #{index + 1}
+        </Typography>
+        <IconButton
+          onClick={() => removeLicense(index)}
+          sx={{
+            color: 'error.main',
+            '&:hover': {
+              bgcolor: 'error.50'
+            }
+          }}
+        >
+          <DeleteIcon />
+        </IconButton>
+      </Box>
+      
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label="رقم الرخصة"
+            value={license.license_number}
+            onChange={(e) => updateLicense(index, 'license_number', e.target.value)}
+            sx={fieldStyles}
+          />
+        </Grid>
+        
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label="اسم الرخصة"
+            value={license.license_name}
+            onChange={(e) => updateLicense(index, 'license_name', e.target.value)}
+            sx={fieldStyles}
+          />
+        </Grid>
+        
+        <Grid item xs={12} md={6}>
+          <DatePicker
+            label="تاريخ بداية الرخصة"
+            value={license.license_start_date}
+            onChange={(date) => updateLicense(index, 'license_start_date', date)}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                fullWidth
+                sx={fieldStyles}
+              />
+            )}
+          />
+        </Grid>
+        
+        <Grid item xs={12} md={6}>
+          <DatePicker
+            label="تاريخ انتهاء الرخصة"
+            value={license.license_end_date}
+            onChange={(date) => updateLicense(index, 'license_end_date', date)}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                fullWidth
+                sx={fieldStyles}
+              />
+            )}
+          />
+        </Grid>
+        
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            label="ملاحظات الرخصة"
+            value={license.notes}
+            onChange={(e) => updateLicense(index, 'notes', e.target.value)}
+            multiline
+            rows={3}
+            sx={textAreaStyles}
+          />
+        </Grid>
+      </Grid>
+    </Paper>
+  );
   if (loading && isEdit) {
     return (
       <Box sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3 } }}>
@@ -790,6 +943,88 @@ const ProjectForm = () => {
               </Grid>
             </FormSection>
 
+            {/* Step 5: License Data */}
+            <FormSection
+              title="بيانات الرخص"
+              icon={<DescriptionIcon />}
+              step={4}
+              gradient="linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)"
+            >
+              <Box>
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+                  <Typography 
+                    variant="h6" 
+                    sx={{ 
+                      fontWeight: 600,
+                      color: 'text.primary',
+                      fontFamily: 'Sakkal Majalla'
+                    }}
+                  >
+                    إدارة رخص المشروع
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={addLicense}
+                    sx={{
+                      borderRadius: 3,
+                      px: 3,
+                      py: 1.5,
+                      fontWeight: 600,
+                      background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+                      fontFamily: 'Sakkal Majalla',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+                        transform: 'translateY(-1px)'
+                      }
+                    }}
+                  >
+                    إضافة رخصة
+                  </Button>
+                </Box>
+
+                {licenses.length === 0 ? (
+                  <Box 
+                    sx={{
+                      textAlign: 'center',
+                      py: 6,
+                      border: '2px dashed #d1d5db',
+                      borderRadius: 3,
+                      bgcolor: '#f9fafb'
+                    }}
+                  >
+                    <DescriptionIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+                    <Typography 
+                      variant="h6" 
+                      color="text.secondary" 
+                      sx={{ 
+                        mb: 1,
+                        fontFamily: 'Sakkal Majalla'
+                      }}
+                    >
+                      لا توجد رخص مضافة
+                    </Typography>
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ fontFamily: 'Sakkal Majalla' }}
+                    >
+                      اضغط على "إضافة رخصة" لبدء إضافة رخص المشروع
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Stack spacing={3}>
+                    {licenses.map((license, index) => (
+                      <LicenseCard 
+                        key={license.id || index} 
+                        license={license} 
+                        index={index} 
+                      />
+                    ))}
+                  </Stack>
+                )}
+              </Box>
+            </FormSection>
             {/* Action Buttons */}
             <Card sx={{
               borderRadius: 3,
