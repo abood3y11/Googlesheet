@@ -260,12 +260,16 @@ const ProjectForm = () => {
     if (formData.project_start_date && formData.project_duration_days) {
       const startDate = dayjs(formData.project_start_date);
       const endDate = startDate.add(parseInt(formData.project_duration_days), 'day');
-      setFormData(prev => ({
-        ...prev,
-        planned_project_end_date: endDate
-      }));
+      
+      // Only update if the calculated date is different from current
+      if (!formData.planned_project_end_date || !endDate.isSame(formData.planned_project_end_date, 'day')) {
+        setFormData(prev => ({
+          ...prev,
+          planned_project_end_date: endDate
+        }));
+      }
     }
-  }, [formData.project_start_date, formData.project_duration_days]);
+  }, [formData.project_start_date, formData.project_duration_days, formData.planned_project_end_date]);
 
   // Calculate duration when start date and end date change
   useEffect(() => {
@@ -273,14 +277,16 @@ const ProjectForm = () => {
       const startDate = dayjs(formData.project_start_date);
       const endDate = dayjs(formData.planned_project_end_date);
       const duration = endDate.diff(startDate, 'day');
-      if (duration > 0 && duration !== parseInt(formData.project_duration_days)) {
+      
+      // Only update if the calculated duration is different from current
+      if (duration > 0 && duration.toString() !== formData.project_duration_days) {
         setFormData(prev => ({
           ...prev,
           project_duration_days: duration.toString()
         }));
       }
     }
-  }, [formData.project_start_date, formData.planned_project_end_date]);
+  }, [formData.project_start_date, formData.planned_project_end_date, formData.project_duration_days]);
   // Common styles for all form fields
   const fieldStyles = {
     '& .MuiOutlinedInput-root': {
