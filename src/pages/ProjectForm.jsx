@@ -19,6 +19,8 @@ import {
   Step,
   StepLabel,
   Collapse,
+  IconButton,
+  Divider,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import {
@@ -29,7 +31,11 @@ import {
   AttachMoney as MoneyIcon,
   Schedule as ScheduleIcon,
   Assignment as AssignmentIcon,
-  CheckCircle as CheckCircleIcon
+  CheckCircle as CheckCircleIcon,
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  Description as DescriptionIcon,
+  Security as SecurityIcon
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -60,10 +66,9 @@ const ProjectForm = () => {
     purchase_order_number: '',
     charter_preparation_date: null,
     project_start_date: null,
-    type_of_project_start: 'immediate',
+    type_of_project_start: 'contract_signing',
     project_duration_days: '',
     planned_project_end_date: null,
-    actual_project_end_date: null,
     site_handover_date: null,
     contract_signing_date: null,
     project_status: 'planning',
@@ -71,13 +76,33 @@ const ProjectForm = () => {
     suspension_duration: '',
     project_resumption_date: null,
     notes: '',
+    // New fields for authorization data
+    authorization_data: {
+      authorization_number: '',
+      authorization_date: null,
+      notes: ''
+    },
+    // New field for licenses
+    licenses: []
   });
 
   const steps = [
     { label: 'المعلومات الأساسية', icon: <AssignmentIcon /> },
     { label: 'الفرق والمسؤوليات', icon: <PersonIcon /> },
+    { label: 'بيانات التعميد', icon: <SecurityIcon /> },
     { label: 'المعلومات المالية', icon: <MoneyIcon /> },
     { label: 'الجدول الزمني', icon: <ScheduleIcon /> },
+    { label: 'بيانات الرخص', icon: <DescriptionIcon /> },
+  ];
+
+  // University project managers validation list
+  const universityProjectManagers = [
+    'محمد الشهري',
+    'نجلاء الحميد',
+    'نوف الفارس',
+    'يوسف العنزي',
+    'سارة المقرن',
+    'عمار القحطاني'
   ];
 
   useEffect(() => {
@@ -85,6 +110,33 @@ const ProjectForm = () => {
       fetchProject();
     }
   }, [id, isEdit]);
+
+  // Calculate planned end date when start date or duration changes
+  useEffect(() => {
+    if (formData.project_start_date && formData.project_duration_days) {
+      const startDate = dayjs(formData.project_start_date);
+      const endDate = startDate.add(parseInt(formData.project_duration_days), 'day');
+      setFormData(prev => ({
+        ...prev,
+        planned_project_end_date: endDate
+      }));
+    }
+  }, [formData.project_start_date, formData.project_duration_days]);
+
+  // Calculate duration when start date and end date change
+  useEffect(() => {
+    if (formData.project_start_date && formData.planned_project_end_date) {
+      const startDate = dayjs(formData.project_start_date);
+      const endDate = dayjs(formData.planned_project_end_date);
+      const duration = endDate.diff(startDate, 'day');
+      if (duration > 0 && duration !== parseInt(formData.project_duration_days)) {
+        setFormData(prev => ({
+          ...prev,
+          project_duration_days: duration.toString()
+        }));
+      }
+    }
+  }, [formData.project_start_date, formData.planned_project_end_date]);
 
   const fetchProject = async () => {
     try {
@@ -97,7 +149,6 @@ const ProjectForm = () => {
         'charter_preparation_date',
         'project_start_date',
         'planned_project_end_date',
-        'actual_project_end_date',
         'site_handover_date',
         'contract_signing_date',
         'project_suspension_date',
@@ -109,6 +160,28 @@ const ProjectForm = () => {
           formattedProject[field] = dayjs(formattedProject[field]);
         }
       });
+
+      // Handle authorization data
+      if (!formattedProject.authorization_data) {
+        formattedProject.authorization_data = {
+          authorization_number: '',
+          authorization_date: null,
+          notes: ''
+        };
+      } else if (formattedProject.authorization_data.authorization_date) {
+        formattedProject.authorization_data.authorization_date = dayjs(formattedProject.authorization_data.authorization_date);
+      }
+
+      // Handle licenses
+      if (!formattedProject.licenses) {
+        formattedProject.licenses = [];
+      } else {
+        formattedProject.licenses = formattedProject.licenses.map(license => ({
+          ...license,
+          start_date: license.start_date ? dayjs(license.start_date) : null,
+          end_date: license.end_date ? dayjs(license.end_date) : null
+        }));
+      }
       
       setFormData(formattedProject);
     } catch (err) {
@@ -125,6 +198,48 @@ const ProjectForm = () => {
     }));
   };
 
+  const handleAuthorizationDataChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      authorization_data: {
+        ...prev.authorization_data,
+        [field]: value
+      }
+    }));
+  };
+
+  const addLicense = () => {
+    const newLicense = {
+      id: Date.now(), // Temporary ID for new licenses
+      license_number: '',
+      license_name: '',
+      start_date: null,
+      end_date: null,
+      notes: ''
+    };
+    
+    setFormData(prev => ({
+      ...prev,
+      licenses: [...prev.licenses, newLicense]
+    }));
+  };
+
+  const removeLicense = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      licenses: prev.licenses.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleLicenseChange = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      licenses: prev.licenses.map((license, i) => 
+        i === index ? { ...license, [field]: value } : license
+      )
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -138,7 +253,6 @@ const ProjectForm = () => {
         'charter_preparation_date',
         'project_start_date',
         'planned_project_end_date',
-        'actual_project_end_date',
         'site_handover_date',
         'contract_signing_date',
         'project_suspension_date',
@@ -150,6 +264,18 @@ const ProjectForm = () => {
           submitData[field] = submitData[field].format('YYYY-MM-DD');
         }
       });
+
+      // Handle authorization data dates
+      if (submitData.authorization_data.authorization_date && dayjs.isDayjs(submitData.authorization_data.authorization_date)) {
+        submitData.authorization_data.authorization_date = submitData.authorization_data.authorization_date.format('YYYY-MM-DD');
+      }
+
+      // Handle license dates
+      submitData.licenses = submitData.licenses.map(license => ({
+        ...license,
+        start_date: license.start_date && dayjs.isDayjs(license.start_date) ? license.start_date.format('YYYY-MM-DD') : license.start_date,
+        end_date: license.end_date && dayjs.isDayjs(license.end_date) ? license.end_date.format('YYYY-MM-DD') : license.end_date
+      }));
 
       if (submitData.project_cost) {
         submitData.project_cost = parseFloat(submitData.project_cost);
@@ -188,9 +314,9 @@ const ProjectForm = () => {
   ];
 
   const projectStartTypes = [
-    { value: 'immediate', label: 'فوري' },
-    { value: 'scheduled', label: 'مجدول' },
-    { value: 'conditional', label: 'مشروط' },
+    { value: 'contract_signing', label: 'من توقيع العقد' },
+    { value: 'authorization', label: 'من التعميد' },
+    { value: 'site_handover', label: 'من استلام الموقع' },
   ];
 
   // Common styles for all form fields
@@ -539,14 +665,23 @@ const ProjectForm = () => {
             >
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="مدير المشروع بالجامعة"
-                    value={formData.university_project_manager}
-                    onChange={(e) => handleInputChange('university_project_manager', e.target.value)}
-                    required
-                    sx={fieldStyles}
-                  />
+                  <FormControl fullWidth sx={fieldStyles}>
+                    <InputLabel>مدير المشروع بالجامعة</InputLabel>
+                    <Select
+                      value={formData.university_project_manager}
+                      onChange={(e) => handleInputChange('university_project_manager', e.target.value)}
+                      label="مدير المشروع بالجامعة"
+                      required
+                    >
+                      {universityProjectManagers.map((manager) => (
+                        <MenuItem key={manager} value={manager}>
+                          <Typography sx={{ fontFamily: 'Sakkal Majalla' }}>
+                            {manager}
+                          </Typography>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 </Grid>
 
                 <Grid item xs={12} md={6}>
@@ -602,11 +737,58 @@ const ProjectForm = () => {
               </Grid>
             </FormSection>
 
-            {/* Step 3: Financial Information */}
+            {/* Step 3: Authorization Data */}
+            <FormSection
+              title="بيانات التعميد"
+              icon={<SecurityIcon />}
+              step={2}
+              gradient="linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)"
+            >
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="رقم التعميد"
+                    value={formData.authorization_data.authorization_number}
+                    onChange={(e) => handleAuthorizationDataChange('authorization_number', e.target.value)}
+                    sx={fieldStyles}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <DatePicker
+                    label="تاريخ التعميد"
+                    value={formData.authorization_data.authorization_date}
+                    onChange={(date) => handleAuthorizationDataChange('authorization_date', date)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        fullWidth
+                        sx={fieldStyles}
+                      />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="ملاحظات التعميد"
+                    value={formData.authorization_data.notes}
+                    onChange={(e) => handleAuthorizationDataChange('notes', e.target.value)}
+                    multiline
+                    rows={3}
+                    sx={textAreaStyles}
+                  />
+                </Grid>
+              </Grid>
+            </FormSection>
+
+            {/* Step 4: Financial Information */}
             <FormSection
               title="المعلومات المالية"
               icon={<MoneyIcon />}
-              step={2}
+              step={3}
               gradient="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
             >
               <Grid container spacing={3}>
@@ -659,12 +841,12 @@ const ProjectForm = () => {
               </Grid>
             </FormSection>
 
-            {/* Step 4: Timeline */}
+            {/* Step 5: Timeline */}
             <FormSection
               title="الجدول الزمني"
               icon={<ScheduleIcon />}
-              step={3}
-              gradient="linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)"
+              step={4}
+              gradient="linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)"
             >
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
@@ -730,21 +912,6 @@ const ProjectForm = () => {
 
                 <Grid item xs={12} md={6}>
                   <DatePicker
-                    label="تاريخ انتهاء المشروع الفعلي"
-                    value={formData.actual_project_end_date}
-                    onChange={(date) => handleInputChange('actual_project_end_date', date)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        fullWidth
-                        sx={fieldStyles}
-                      />
-                    )}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <DatePicker
                     label="تاريخ تسليم الموقع"
                     value={formData.site_handover_date}
                     onChange={(date) => handleInputChange('site_handover_date', date)}
@@ -788,6 +955,167 @@ const ProjectForm = () => {
                   />
                 </Grid>
               </Grid>
+            </FormSection>
+
+            {/* Step 6: License Data */}
+            <FormSection
+              title="بيانات الرخص"
+              icon={<DescriptionIcon />}
+              step={5}
+              gradient="linear-gradient(135deg, #64748b 0%, #475569 100%)"
+            >
+              <Box>
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                  <Typography variant="h6" sx={{ fontFamily: 'Sakkal Majalla', fontWeight: 600 }}>
+                    قائمة الرخص
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={addLicense}
+                    sx={{
+                      borderRadius: 3,
+                      px: 3,
+                      py: 1.5,
+                      fontWeight: 600,
+                      fontFamily: 'Sakkal Majalla',
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                      }
+                    }}
+                  >
+                    إضافة رخصة
+                  </Button>
+                </Box>
+
+                {formData.licenses.length === 0 ? (
+                  <Box 
+                    sx={{ 
+                      textAlign: 'center', 
+                      py: 4, 
+                      border: '2px dashed #e5e7eb', 
+                      borderRadius: 3,
+                      bgcolor: '#f9fafb'
+                    }}
+                  >
+                    <Typography 
+                      variant="body1" 
+                      color="text.secondary"
+                      sx={{ fontFamily: 'Sakkal Majalla' }}
+                    >
+                      لا توجد رخص مضافة. اضغط على "إضافة رخصة" لإضافة رخصة جديدة.
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    {formData.licenses.map((license, index) => (
+                      <Card 
+                        key={license.id || index}
+                        sx={{
+                          borderRadius: 3,
+                          border: '2px solid #e5e7eb',
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                          '&:hover': {
+                            borderColor: 'primary.main',
+                            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
+                          }
+                        }}
+                      >
+                        <CardContent sx={{ p: 3 }}>
+                          <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                            <Typography 
+                              variant="h6" 
+                              sx={{ 
+                                fontFamily: 'Sakkal Majalla', 
+                                fontWeight: 600,
+                                color: 'primary.main'
+                              }}
+                            >
+                              رخصة رقم {index + 1}
+                            </Typography>
+                            <IconButton
+                              onClick={() => removeLicense(index)}
+                              sx={{
+                                color: 'error.main',
+                                '&:hover': {
+                                  bgcolor: 'error.50',
+                                }
+                              }}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Box>
+                          
+                          <Grid container spacing={3}>
+                            <Grid item xs={12} md={6}>
+                              <TextField
+                                fullWidth
+                                label="رقم الرخصة"
+                                value={license.license_number}
+                                onChange={(e) => handleLicenseChange(index, 'license_number', e.target.value)}
+                                sx={fieldStyles}
+                              />
+                            </Grid>
+                            
+                            <Grid item xs={12} md={6}>
+                              <TextField
+                                fullWidth
+                                label="اسم الرخصة"
+                                value={license.license_name}
+                                onChange={(e) => handleLicenseChange(index, 'license_name', e.target.value)}
+                                sx={fieldStyles}
+                              />
+                            </Grid>
+                            
+                            <Grid item xs={12} md={6}>
+                              <DatePicker
+                                label="تاريخ بداية الرخصة"
+                                value={license.start_date}
+                                onChange={(date) => handleLicenseChange(index, 'start_date', date)}
+                                renderInput={(params) => (
+                                  <TextField
+                                    {...params}
+                                    fullWidth
+                                    sx={fieldStyles}
+                                  />
+                                )}
+                              />
+                            </Grid>
+                            
+                            <Grid item xs={12} md={6}>
+                              <DatePicker
+                                label="تاريخ انتهاء الرخصة"
+                                value={license.end_date}
+                                onChange={(date) => handleLicenseChange(index, 'end_date', date)}
+                                renderInput={(params) => (
+                                  <TextField
+                                    {...params}
+                                    fullWidth
+                                    sx={fieldStyles}
+                                  />
+                                )}
+                              />
+                            </Grid>
+                            
+                            <Grid item xs={12}>
+                              <TextField
+                                fullWidth
+                                label="ملاحظات الرخصة"
+                                value={license.notes}
+                                onChange={(e) => handleLicenseChange(index, 'notes', e.target.value)}
+                                multiline
+                                rows={2}
+                                sx={textAreaStyles}
+                              />
+                            </Grid>
+                          </Grid>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </Box>
+                )}
+              </Box>
             </FormSection>
 
             {/* Action Buttons */}
