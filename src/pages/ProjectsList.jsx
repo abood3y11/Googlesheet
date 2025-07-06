@@ -1261,17 +1261,20 @@ const ProjectsList = () => {
           <Menu
             anchorEl={actionMenu.anchorEl}
             open={Boolean(actionMenu.anchorEl)}
-            onClose={handleActionMenuClose}
-            PaperProps={{
-              sx: {
-                borderRadius: 3,
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'center',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'center',
+            }}
                 minWidth: 200,
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
-                border: '1px solid rgba(0, 0, 0, 0.05)'
+                border: '1px solid rgba(0, 0, 0, 0.05)',
+                mt: 1
               }
             }}
-            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
           >
             {actionMenu.project?.project_status !== 'suspended' && 
              actionMenu.project?.project_status !== 'completed' && 
