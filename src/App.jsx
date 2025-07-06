@@ -58,7 +58,7 @@ const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"Inter", "Segoe UI", "Tahoma", "Geneva", "Verdana", sans-serif',
+    fontFamily: '"Sakkal Majalla", "Tahoma", "Arial", sans-serif',
     h1: {
       fontSize: '2.5rem',
       fontWeight: 700,

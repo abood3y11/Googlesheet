@@ -17,7 +17,6 @@ import {
   Skeleton,
   Avatar,
   Stack,
-  Divider,
   IconButton,
   Tooltip,
   Paper,
@@ -36,7 +35,9 @@ import {
   Person as PersonIcon,
   CalendarToday as CalendarIcon,
   AttachMoney as MoneyIcon,
-  MoreVert as MoreVertIcon
+  Warning as WarningIcon,
+  Cancel as CancelIcon,
+  Info as InfoIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { projectsAPI } from '../services/api';
@@ -75,26 +76,45 @@ const ProjectsList = () => {
     }
   };
 
-  const getStatusColor = (status) => {
-    const statusColors = {
-      planning: { bg: '#f0f9ff', color: '#0369a1', border: '#bae6fd' },
-      in_progress: { bg: '#f0fdf4', color: '#059669', border: '#bbf7d0' },
-      suspended: { bg: '#fffbeb', color: '#d97706', border: '#fed7aa' },
-      completed: { bg: '#f0f9ff', color: '#7c3aed', border: '#c4b5fd' },
-      cancelled: { bg: '#fef2f2', color: '#dc2626', border: '#fecaca' },
+  const getStatusConfig = (status) => {
+    const statusConfigs = {
+      planning: {
+        color: '#3b82f6',
+        bg: '#eff6ff',
+        border: '#bfdbfe',
+        icon: <InfoIcon />,
+        label: 'تخطيط'
+      },
+      in_progress: {
+        color: '#10b981',
+        bg: '#f0fdf4',
+        border: '#bbf7d0',
+        icon: <CheckCircleIcon />,
+        label: 'قيد التنفيذ'
+      },
+      suspended: {
+        color: '#f59e0b',
+        bg: '#fffbeb',
+        border: '#fed7aa',
+        icon: <WarningIcon />,
+        label: 'متوقف'
+      },
+      completed: {
+        color: '#8b5cf6',
+        bg: '#faf5ff',
+        border: '#e9d5ff',
+        icon: <CheckCircleIcon />,
+        label: 'مكتمل'
+      },
+      cancelled: {
+        color: '#ef4444',
+        bg: '#fef2f2',
+        border: '#fecaca',
+        icon: <CancelIcon />,
+        label: 'ملغي'
+      },
     };
-    return statusColors[status] || statusColors.planning;
-  };
-
-  const getStatusLabel = (status) => {
-    const statusLabels = {
-      planning: 'تخطيط',
-      in_progress: 'قيد التنفيذ',
-      suspended: 'متوقف',
-      completed: 'مكتمل',
-      cancelled: 'ملغي',
-    };
-    return statusLabels[status] || status;
+    return statusConfigs[status] || statusConfigs.planning;
   };
 
   const formatCurrency = (amount) => {
@@ -122,40 +142,70 @@ const ProjectsList = () => {
     <Card sx={{
       background: gradient,
       color: 'white',
-      height: '100%',
+      height: '160px',
       position: 'relative',
       overflow: 'hidden',
+      borderRadius: 4,
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      '&:hover': {
+        transform: 'translateY(-8px)',
+        boxShadow: '0 16px 48px rgba(0, 0, 0, 0.25)',
+      },
       '&::before': {
         content: '""',
         position: 'absolute',
         top: 0,
         right: 0,
-        width: '100px',
-        height: '100px',
+        width: '120px',
+        height: '120px',
         background: 'rgba(255, 255, 255, 0.1)',
         borderRadius: '50%',
-        transform: 'translate(30px, -30px)',
+        transform: 'translate(40px, -40px)',
       }
     }}>
-      <CardContent sx={{ position: 'relative', zIndex: 1 }}>
+      <CardContent sx={{ 
+        position: 'relative', 
+        zIndex: 1, 
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        p: 3
+      }}>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Box>
-            <Typography variant="h3" sx={{ fontWeight: 800, mb: 0.5, fontSize: '2.5rem' }}>
+            <Typography variant="h3" sx={{ 
+              fontWeight: 800, 
+              mb: 0.5, 
+              fontSize: { xs: '2rem', sm: '2.5rem' },
+              fontFamily: 'Sakkal Majalla'
+            }}>
               {value}
             </Typography>
-            <Typography variant="h6" sx={{ opacity: 0.95, fontWeight: 600, mb: 0.5 }}>
+            <Typography variant="h6" sx={{ 
+              opacity: 0.95, 
+              fontWeight: 600, 
+              mb: 0.5,
+              fontFamily: 'Sakkal Majalla',
+              fontSize: { xs: '1rem', sm: '1.125rem' }
+            }}>
               {title}
             </Typography>
             {subtitle && (
-              <Typography variant="body2" sx={{ opacity: 0.8 }}>
+              <Typography variant="body2" sx={{ 
+                opacity: 0.8,
+                fontFamily: 'Sakkal Majalla',
+                fontSize: { xs: '0.75rem', sm: '0.875rem' }
+              }}>
                 {subtitle}
               </Typography>
             )}
           </Box>
           <Avatar sx={{
             bgcolor: 'rgba(255, 255, 255, 0.2)',
-            width: 60,
-            height: 60,
+            width: { xs: 50, sm: 60 },
+            height: { xs: 50, sm: 60 },
             backdropFilter: 'blur(10px)'
           }}>
             {icon}
@@ -166,17 +216,19 @@ const ProjectsList = () => {
   );
 
   const ProjectCard = ({ project }) => {
-    const statusStyle = getStatusColor(project.project_status);
+    const statusConfig = getStatusConfig(project.project_status);
     
     return (
       <Card sx={{
-        height: '100%',
+        height: '380px',
         borderRadius: 4,
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
         border: '1px solid rgba(0, 0, 0, 0.04)',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         position: 'relative',
         overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
         '&:hover': {
           transform: 'translateY(-8px)',
           boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)',
@@ -192,10 +244,16 @@ const ProjectsList = () => {
           left: 0,
           right: 0,
           height: '4px',
-          background: `linear-gradient(90deg, ${statusStyle.color}, ${statusStyle.border})`,
+          background: `linear-gradient(90deg, ${statusConfig.color}, ${statusConfig.border})`,
         }
       }}>
-        <CardContent sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <CardContent sx={{ 
+          p: 3, 
+          height: '100%', 
+          display: 'flex', 
+          flexDirection: 'column',
+          fontFamily: 'Sakkal Majalla'
+        }}>
           {/* Header */}
           <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
             <Box flex={1}>
@@ -210,19 +268,27 @@ const ProjectsList = () => {
                   WebkitLineClamp: 2,
                   WebkitBoxOrient: 'vertical',
                   overflow: 'hidden',
+                  fontFamily: 'Sakkal Majalla',
+                  fontSize: '1.25rem',
+                  minHeight: '2.6rem'
                 }}
               >
                 {project.project_name}
               </Typography>
               <Chip
-                label={getStatusLabel(project.project_status)}
+                icon={statusConfig.icon}
+                label={statusConfig.label}
                 sx={{
-                  bgcolor: statusStyle.bg,
-                  color: statusStyle.color,
-                  border: `1px solid ${statusStyle.border}`,
-                  fontWeight: 600,
-                  fontSize: '0.75rem',
-                  height: 28,
+                  bgcolor: statusConfig.bg,
+                  color: statusConfig.color,
+                  border: `2px solid ${statusConfig.border}`,
+                  fontWeight: 700,
+                  fontSize: '0.875rem',
+                  height: 32,
+                  fontFamily: 'Sakkal Majalla',
+                  '& .MuiChip-icon': {
+                    color: statusConfig.color
+                  }
                 }}
               />
             </Box>
@@ -279,56 +345,101 @@ const ProjectsList = () => {
           </Box>
 
           {/* Content */}
-          <Box flex={1}>
-            <Stack spacing={2}>
-              <Box display="flex" alignItems="center" gap={1}>
-                <BusinessIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
-                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+          <Box flex={1} display="flex" flexDirection="column" justifyContent="space-between">
+            <Stack spacing={2.5}>
+              <Box display="flex" alignItems="center" gap={1.5}>
+                <BusinessIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary" 
+                  sx={{ 
+                    fontWeight: 500,
+                    fontFamily: 'Sakkal Majalla',
+                    fontSize: '1rem',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
                   {project.beneficiary_organization || 'غير محدد'}
                 </Typography>
               </Box>
               
-              <Box display="flex" alignItems="center" gap={1}>
-                <PersonIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
-                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+              <Box display="flex" alignItems="center" gap={1.5}>
+                <PersonIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary" 
+                  sx={{ 
+                    fontWeight: 500,
+                    fontFamily: 'Sakkal Majalla',
+                    fontSize: '1rem',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
                   {project.university_project_manager || 'غير محدد'}
                 </Typography>
               </Box>
 
-              <Box display="flex" alignItems="center" gap={1}>
-                <MoneyIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
-                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+              <Box display="flex" alignItems="center" gap={1.5}>
+                <MoneyIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary" 
+                  sx={{ 
+                    fontWeight: 600,
+                    fontFamily: 'Sakkal Majalla',
+                    fontSize: '1rem',
+                    color: 'primary.main'
+                  }}
+                >
                   {formatCurrency(project.project_cost)}
                 </Typography>
               </Box>
 
-              <Box display="flex" alignItems="center" gap={1}>
-                <CalendarIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
-                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+              <Box display="flex" alignItems="center" gap={1.5}>
+                <CalendarIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary" 
+                  sx={{ 
+                    fontWeight: 500,
+                    fontFamily: 'Sakkal Majalla',
+                    fontSize: '1rem'
+                  }}
+                >
                   {formatDate(project.project_start_date)}
                 </Typography>
               </Box>
             </Stack>
-          </Box>
 
-          {/* Footer */}
-          <Box mt={2} pt={2} borderTop="1px solid" borderColor="divider">
-            <Box display="flex" justifyContent="space-between" alignItems="center">
-              <Typography variant="caption" color="text.secondary">
-                المعرف: {project.id}
-              </Typography>
-              <Button
-                size="small"
-                onClick={() => navigate(`/projects/${project.id}`)}
-                sx={{
-                  fontWeight: 600,
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  px: 2,
-                }}
-              >
-                عرض التفاصيل
-              </Button>
+            {/* Footer */}
+            <Box mt={3} pt={2} borderTop="1px solid" borderColor="divider">
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Typography 
+                  variant="caption" 
+                  color="text.secondary"
+                  sx={{ fontFamily: 'Sakkal Majalla', fontSize: '0.875rem' }}
+                >
+                  المعرف: {project.id}
+                </Typography>
+                <Button
+                  size="small"
+                  onClick={() => navigate(`/projects/${project.id}`)}
+                  sx={{
+                    fontWeight: 600,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    px: 2,
+                    fontFamily: 'Sakkal Majalla',
+                    fontSize: '0.875rem'
+                  }}
+                >
+                  عرض التفاصيل
+                </Button>
+              </Box>
             </Box>
           </Box>
         </CardContent>
@@ -338,34 +449,34 @@ const ProjectsList = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="xl">
+      <Box sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3 } }}>
         <Box sx={{ py: 4 }}>
           <Skeleton variant="text" width={300} height={60} sx={{ mb: 4 }} />
           <Grid container spacing={3} sx={{ mb: 4 }}>
             {[1, 2, 3, 4].map((item) => (
               <Grid item xs={12} sm={6} md={3} key={item}>
-                <Skeleton variant="rectangular" height={140} sx={{ borderRadius: 3 }} />
+                <Skeleton variant="rectangular" height={160} sx={{ borderRadius: 3 }} />
               </Grid>
             ))}
           </Grid>
           <Grid container spacing={3}>
             {[1, 2, 3, 4, 5, 6].map((item) => (
-              <Grid item xs={12} sm={6} lg={4} key={item}>
-                <Skeleton variant="rectangular" height={280} sx={{ borderRadius: 3 }} />
+              <Grid item xs={12} sm={6} lg={4} xl={3} key={item}>
+                <Skeleton variant="rectangular" height={380} sx={{ borderRadius: 3 }} />
               </Grid>
             ))}
           </Grid>
         </Box>
-      </Container>
+      </Box>
     );
   }
 
   return (
     <Fade in={true} timeout={800}>
-      <Container maxWidth="xl">
+      <Box sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3 } }}>
         <Box sx={{ py: 4 }}>
           {/* Header */}
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={4} flexWrap="wrap" gap={2}>
             <Box>
               <Typography
                 variant="h3"
@@ -377,11 +488,21 @@ const ProjectsList = () => {
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   mb: 1,
+                  fontFamily: 'Sakkal Majalla',
+                  fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' }
                 }}
               >
                 إدارة المشاريع
               </Typography>
-              <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 500 }}>
+              <Typography 
+                variant="h6" 
+                color="text.secondary" 
+                sx={{ 
+                  fontWeight: 500,
+                  fontFamily: 'Sakkal Majalla',
+                  fontSize: { xs: '1rem', sm: '1.125rem' }
+                }}
+              >
                 نظرة شاملة على جميع المشاريع والإحصائيات
               </Typography>
             </Box>
@@ -394,9 +515,10 @@ const ProjectsList = () => {
                 px: 4,
                 py: 1.5,
                 fontWeight: 700,
-                fontSize: '1rem',
+                fontSize: { xs: '0.875rem', sm: '1rem' },
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)',
+                fontFamily: 'Sakkal Majalla',
                 '&:hover': {
                   background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
                   boxShadow: '0 12px 40px rgba(102, 126, 234, 0.4)',
@@ -414,7 +536,7 @@ const ProjectsList = () => {
               <StatCard
                 title="إجمالي المشاريع"
                 value={totalProjects}
-                icon={<AssignmentIcon sx={{ fontSize: 28 }} />}
+                icon={<AssignmentIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />}
                 gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
                 subtitle="جميع المشاريع المسجلة"
               />
@@ -423,7 +545,7 @@ const ProjectsList = () => {
               <StatCard
                 title="مشاريع مكتملة"
                 value={completedProjects}
-                icon={<CheckCircleIcon sx={{ fontSize: 28 }} />}
+                icon={<CheckCircleIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />}
                 gradient="linear-gradient(135deg, #10b981 0%, #059669 100%)"
                 subtitle={`${totalProjects > 0 ? Math.round((completedProjects / totalProjects) * 100) : 0}% من المشاريع`}
               />
@@ -432,7 +554,7 @@ const ProjectsList = () => {
               <StatCard
                 title="قيد التنفيذ"
                 value={inProgressProjects}
-                icon={<ScheduleIcon sx={{ fontSize: 28 }} />}
+                icon={<ScheduleIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />}
                 gradient="linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
                 subtitle="مشاريع نشطة حالياً"
               />
@@ -441,7 +563,7 @@ const ProjectsList = () => {
               <StatCard
                 title="إجمالي الميزانية"
                 value={`${(totalBudget / 1000000).toFixed(1)}م ر.س`}
-                icon={<TrendingUpIcon sx={{ fontSize: 28 }} />}
+                icon={<TrendingUpIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />}
                 gradient="linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)"
                 subtitle="القيمة الإجمالية للمشاريع"
               />
@@ -456,6 +578,8 @@ const ProjectsList = () => {
                 mb: 4,
                 borderRadius: 3,
                 border: '1px solid #fecaca',
+                fontFamily: 'Sakkal Majalla',
+                fontSize: '1rem',
                 '& .MuiAlert-icon': {
                   fontSize: 24
                 }
@@ -475,10 +599,25 @@ const ProjectsList = () => {
               bgcolor: '#fafafa'
             }}>
               <AssignmentIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
-              <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, color: 'text.secondary' }}>
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontWeight: 600, 
+                  mb: 1, 
+                  color: 'text.secondary',
+                  fontFamily: 'Sakkal Majalla'
+                }}
+              >
                 لا توجد مشاريع حالياً
               </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+              <Typography 
+                variant="body1" 
+                color="text.secondary" 
+                sx={{ 
+                  mb: 3,
+                  fontFamily: 'Sakkal Majalla'
+                }}
+              >
                 ابدأ بإنشاء مشروعك الأول لإدارة المشاريع بكفاءة
               </Typography>
               <Button
@@ -491,6 +630,7 @@ const ProjectsList = () => {
                   py: 1.5,
                   fontWeight: 600,
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  fontFamily: 'Sakkal Majalla'
                 }}
               >
                 إنشاء مشروع جديد
@@ -499,7 +639,7 @@ const ProjectsList = () => {
           ) : (
             <Grid container spacing={3}>
               {projects.map((project) => (
-                <Grid item xs={12} sm={6} lg={4} key={project.id}>
+                <Grid item xs={12} sm={6} lg={4} xl={3} key={project.id}>
                   <ProjectCard project={project} />
                 </Grid>
               ))}
@@ -514,7 +654,8 @@ const ProjectsList = () => {
               sx: {
                 borderRadius: 4,
                 minWidth: 400,
-                overflow: 'hidden'
+                overflow: 'hidden',
+                fontFamily: 'Sakkal Majalla'
               }
             }}
           >
@@ -524,19 +665,39 @@ const ProjectsList = () => {
               pb: 2,
               background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
               color: 'white',
-              textAlign: 'center'
+              textAlign: 'center',
+              fontFamily: 'Sakkal Majalla'
             }}>
               تأكيد حذف المشروع
             </DialogTitle>
             <DialogContent sx={{ pt: 4, pb: 3, textAlign: 'center' }}>
               <DeleteIcon sx={{ fontSize: 60, color: 'error.main', mb: 2 }} />
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  mb: 2, 
+                  fontWeight: 600,
+                  fontFamily: 'Sakkal Majalla'
+                }}
+              >
                 هل أنت متأكد من حذف هذا المشروع؟
               </Typography>
-              <Typography variant="body1" color="text.secondary">
+              <Typography 
+                variant="body1" 
+                color="text.secondary"
+                sx={{ fontFamily: 'Sakkal Majalla' }}
+              >
                 "{deleteDialog.project?.project_name}"
               </Typography>
-              <Typography variant="body2" color="error.main" sx={{ mt: 2, fontWeight: 500 }}>
+              <Typography 
+                variant="body2" 
+                color="error.main" 
+                sx={{ 
+                  mt: 2, 
+                  fontWeight: 500,
+                  fontFamily: 'Sakkal Majalla'
+                }}
+              >
                 هذا الإجراء لا يمكن التراجع عنه
               </Typography>
             </DialogContent>
@@ -551,6 +712,7 @@ const ProjectsList = () => {
                   fontWeight: 600,
                   borderColor: 'grey.300',
                   color: 'grey.700',
+                  fontFamily: 'Sakkal Majalla',
                   '&:hover': {
                     borderColor: 'grey.400',
                     bgcolor: 'grey.50'
@@ -568,6 +730,7 @@ const ProjectsList = () => {
                   py: 1.5,
                   fontWeight: 600,
                   background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                  fontFamily: 'Sakkal Majalla',
                   '&:hover': {
                     background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
                   }
@@ -578,7 +741,7 @@ const ProjectsList = () => {
             </DialogActions>
           </Dialog>
         </Box>
-      </Container>
+      </Box>
     </Fade>
   );
 };

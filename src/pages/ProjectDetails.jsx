@@ -2,18 +2,15 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  Paper,
   Grid,
   Button,
   Alert,
   CircularProgress,
   Chip,
-  Divider,
   Card,
   CardContent,
   Avatar,
   Stack,
-  Container,
   Fade,
   IconButton,
   Tooltip,
@@ -33,14 +30,12 @@ import {
   Assignment as AssignmentIcon,
   CalendarToday as CalendarIcon,
   LocationOn as LocationIcon,
-  Phone as PhoneIcon,
-  Email as EmailIcon,
   Description as DescriptionIcon,
-  Timeline as TimelineIcon,
   CheckCircle as CheckCircleIcon,
   Warning as WarningIcon,
   Error as ErrorIcon,
-  Info as InfoIcon
+  Info as InfoIcon,
+  Cancel as CancelIcon
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { projectsAPI } from '../services/api';
@@ -113,7 +108,7 @@ const ProjectDetails = () => {
         color: '#ef4444',
         bg: '#fef2f2',
         border: '#fecaca',
-        icon: <ErrorIcon />,
+        icon: <CancelIcon />,
         label: 'ملغي'
       },
     };
@@ -187,7 +182,13 @@ const ProjectDetails = () => {
           }}>
             {icon}
           </Avatar>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              fontWeight: 700,
+              fontFamily: 'Sakkal Majalla'
+            }}
+          >
             {title}
           </Typography>
         </Box>
@@ -206,10 +207,25 @@ const ProjectDetails = () => {
         </Box>
       )}
       <Box flex={1}>
-        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mb: 0.5 }}>
+        <Typography 
+          variant="body2" 
+          color="text.secondary" 
+          sx={{ 
+            fontWeight: 600, 
+            mb: 0.5,
+            fontFamily: 'Sakkal Majalla'
+          }}
+        >
           {label}
         </Typography>
-        <Typography variant="body1" sx={{ fontWeight: 500, wordBreak: 'break-word' }}>
+        <Typography 
+          variant="body1" 
+          sx={{ 
+            fontWeight: 500, 
+            wordBreak: 'break-word',
+            fontFamily: 'Sakkal Majalla'
+          }}
+        >
           {value || 'غير محدد'}
         </Typography>
       </Box>
@@ -218,28 +234,33 @@ const ProjectDetails = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="xl">
+      <Box sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3 } }}>
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
           <Box textAlign="center">
             <CircularProgress size={60} sx={{ mb: 2 }} />
-            <Typography variant="h6" color="text.secondary">
+            <Typography 
+              variant="h6" 
+              color="text.secondary"
+              sx={{ fontFamily: 'Sakkal Majalla' }}
+            >
               جاري تحميل تفاصيل المشروع...
             </Typography>
           </Box>
         </Box>
-      </Container>
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <Container maxWidth="xl">
+      <Box sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3 } }}>
         <Box sx={{ py: 4 }}>
           <Alert
             severity="error"
             sx={{
               mb: 3,
               borderRadius: 3,
+              fontFamily: 'Sakkal Majalla',
               '& .MuiAlert-icon': { fontSize: 24 }
             }}
           >
@@ -249,24 +270,28 @@ const ProjectDetails = () => {
             startIcon={<BackIcon />}
             onClick={() => navigate('/projects')}
             variant="contained"
-            sx={{ borderRadius: 3 }}
+            sx={{ 
+              borderRadius: 3,
+              fontFamily: 'Sakkal Majalla'
+            }}
           >
             العودة إلى قائمة المشاريع
           </Button>
         </Box>
-      </Container>
+      </Box>
     );
   }
 
   if (!project) {
     return (
-      <Container maxWidth="xl">
+      <Box sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3 } }}>
         <Box sx={{ py: 4 }}>
           <Alert
             severity="warning"
             sx={{
               mb: 3,
               borderRadius: 3,
+              fontFamily: 'Sakkal Majalla',
               '& .MuiAlert-icon': { fontSize: 24 }
             }}
           >
@@ -276,12 +301,15 @@ const ProjectDetails = () => {
             startIcon={<BackIcon />}
             onClick={() => navigate('/projects')}
             variant="contained"
-            sx={{ borderRadius: 3 }}
+            sx={{ 
+              borderRadius: 3,
+              fontFamily: 'Sakkal Majalla'
+            }}
           >
             العودة إلى قائمة المشاريع
           </Button>
         </Box>
-      </Container>
+      </Box>
     );
   }
 
@@ -289,11 +317,11 @@ const ProjectDetails = () => {
 
   return (
     <Fade in={true} timeout={800}>
-      <Container maxWidth="xl">
+      <Box sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3 } }}>
         <Box sx={{ py: 4 }}>
           {/* Header */}
-          <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={4}>
-            <Box display="flex" alignItems="center" gap={3}>
+          <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={4} flexWrap="wrap" gap={2}>
+            <Box display="flex" alignItems="center" gap={3} flexWrap="wrap">
               <Button
                 startIcon={<BackIcon />}
                 onClick={() => navigate('/projects')}
@@ -303,6 +331,7 @@ const ProjectDetails = () => {
                   py: 1.5,
                   fontWeight: 600,
                   border: '2px solid transparent',
+                  fontFamily: 'Sakkal Majalla',
                   '&:hover': {
                     bgcolor: 'primary.50',
                     color: 'primary.main',
@@ -323,12 +352,14 @@ const ProjectDetails = () => {
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     mb: 1,
-                    lineHeight: 1.2
+                    lineHeight: 1.2,
+                    fontFamily: 'Sakkal Majalla',
+                    fontSize: { xs: '1.75rem', sm: '2.25rem', md: '3rem' }
                   }}
                 >
                   {project.project_name}
                 </Typography>
-                <Box display="flex" alignItems="center" gap={2}>
+                <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
                   <Chip
                     icon={statusConfig.icon}
                     label={statusConfig.label}
@@ -339,19 +370,27 @@ const ProjectDetails = () => {
                       fontWeight: 700,
                       fontSize: '0.9rem',
                       height: 36,
+                      fontFamily: 'Sakkal Majalla',
                       '& .MuiChip-icon': {
                         color: statusConfig.color
                       }
                     }}
                   />
-                  <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
+                  <Typography 
+                    variant="body1" 
+                    color="text.secondary" 
+                    sx={{ 
+                      fontWeight: 500,
+                      fontFamily: 'Sakkal Majalla'
+                    }}
+                  >
                     المعرف: {project.id}
                   </Typography>
                 </Box>
               </Box>
             </Box>
 
-            <Box display="flex" gap={2}>
+            <Box display="flex" gap={2} flexWrap="wrap">
               <Tooltip title="تعديل المشروع">
                 <Button
                   variant="outlined"
@@ -364,6 +403,7 @@ const ProjectDetails = () => {
                     fontWeight: 600,
                     borderColor: 'primary.300',
                     color: 'primary.main',
+                    fontFamily: 'Sakkal Majalla',
                     '&:hover': {
                       bgcolor: 'primary.50',
                       borderColor: 'primary.main'
@@ -385,6 +425,7 @@ const ProjectDetails = () => {
                     fontWeight: 600,
                     borderColor: 'error.300',
                     color: 'error.main',
+                    fontFamily: 'Sakkal Majalla',
                     '&:hover': {
                       bgcolor: 'error.50',
                       borderColor: 'error.main'
@@ -398,7 +439,7 @@ const ProjectDetails = () => {
           </Box>
 
           {/* Content Grid */}
-          <Grid container spacing={4}>
+          <Grid container spacing={3}>
             {/* Basic Information */}
             <Grid item xs={12} lg={6}>
               <InfoCard
@@ -511,7 +552,7 @@ const ProjectDetails = () => {
                   <DetailItem
                     label="نوع بداية المشروع"
                     value={getStartTypeLabel(project.type_of_project_start)}
-                    icon={<TimelineIcon fontSize="small" />}
+                    icon={<InfoIcon fontSize="small" />}
                   />
                   <DetailItem
                     label="مدة المشروع (أيام)"
@@ -603,7 +644,8 @@ const ProjectDetails = () => {
                       whiteSpace: 'pre-wrap',
                       lineHeight: 1.8,
                       fontWeight: 500,
-                      color: 'text.primary'
+                      color: 'text.primary',
+                      fontFamily: 'Sakkal Majalla'
                     }}
                   >
                     {project.notes}
@@ -631,19 +673,41 @@ const ProjectDetails = () => {
               pb: 2,
               background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
               color: 'white',
-              textAlign: 'center'
+              textAlign: 'center',
+              fontFamily: 'Sakkal Majalla'
             }}>
               تأكيد حذف المشروع
             </DialogTitle>
             <DialogContent sx={{ pt: 4, pb: 3, textAlign: 'center' }}>
               <DeleteIcon sx={{ fontSize: 60, color: 'error.main', mb: 2 }} />
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  mb: 2, 
+                  fontWeight: 600,
+                  fontFamily: 'Sakkal Majalla'
+                }}
+              >
                 هل أنت متأكد من حذف هذا المشروع؟
               </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
+              <Typography 
+                variant="body1" 
+                color="text.secondary" 
+                sx={{ 
+                  mb: 1,
+                  fontFamily: 'Sakkal Majalla'
+                }}
+              >
                 "{project.project_name}"
               </Typography>
-              <Typography variant="body2" color="error.main" sx={{ fontWeight: 500 }}>
+              <Typography 
+                variant="body2" 
+                color="error.main" 
+                sx={{ 
+                  fontWeight: 500,
+                  fontFamily: 'Sakkal Majalla'
+                }}
+              >
                 هذا الإجراء لا يمكن التراجع عنه
               </Typography>
             </DialogContent>
@@ -658,6 +722,7 @@ const ProjectDetails = () => {
                   fontWeight: 600,
                   borderColor: 'grey.300',
                   color: 'grey.700',
+                  fontFamily: 'Sakkal Majalla',
                   '&:hover': {
                     borderColor: 'grey.400',
                     bgcolor: 'grey.50'
@@ -675,6 +740,7 @@ const ProjectDetails = () => {
                   py: 1.5,
                   fontWeight: 600,
                   background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                  fontFamily: 'Sakkal Majalla',
                   '&:hover': {
                     background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
                   }
@@ -685,7 +751,7 @@ const ProjectDetails = () => {
             </DialogActions>
           </Dialog>
         </Box>
-      </Container>
+      </Box>
     </Fade>
   );
 };

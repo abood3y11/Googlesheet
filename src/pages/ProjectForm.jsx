@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  Paper,
   Grid,
   TextField,
   Button,
@@ -14,15 +13,12 @@ import {
   Select,
   Card,
   CardContent,
-  Divider,
   Fade,
-  Container,
   Avatar,
   Stepper,
   Step,
   StepLabel,
   Collapse,
-  Chip
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import {
@@ -218,7 +214,13 @@ const ProjectForm = () => {
             }}>
               {icon}
             </Avatar>
-            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            <Typography 
+              variant="h5" 
+              sx={{ 
+                fontWeight: 700,
+                fontFamily: 'Sakkal Majalla'
+              }}
+            >
               {title}
             </Typography>
           </Box>
@@ -232,35 +234,39 @@ const ProjectForm = () => {
 
   if (loading && isEdit) {
     return (
-      <Container maxWidth="lg">
+      <Box sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3 } }}>
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
           <Box textAlign="center">
             <CircularProgress size={60} sx={{ mb: 2 }} />
-            <Typography variant="h6" color="text.secondary">
+            <Typography 
+              variant="h6" 
+              color="text.secondary"
+              sx={{ fontFamily: 'Sakkal Majalla' }}
+            >
               جاري تحميل بيانات المشروع...
             </Typography>
           </Box>
         </Box>
-      </Container>
+      </Box>
     );
   }
 
   return (
     <Fade in={true} timeout={800}>
-      <Container maxWidth="lg">
+      <Box sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3 } }}>
         <Box sx={{ py: 4 }}>
           {/* Header */}
-          <Box display="flex" alignItems="center" mb={4}>
+          <Box display="flex" alignItems="center" mb={4} flexWrap="wrap" gap={2}>
             <Button
               startIcon={<BackIcon />}
               onClick={() => navigate('/projects')}
               sx={{
-                mr: 3,
                 borderRadius: 3,
                 px: 3,
                 py: 1.5,
                 fontWeight: 600,
                 border: '2px solid transparent',
+                fontFamily: 'Sakkal Majalla',
                 '&:hover': {
                   bgcolor: 'primary.50',
                   color: 'primary.main',
@@ -280,12 +286,21 @@ const ProjectForm = () => {
                   backgroundClip: 'text',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
-                  mb: 0.5
+                  mb: 0.5,
+                  fontFamily: 'Sakkal Majalla',
+                  fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' }
                 }}
               >
                 {isEdit ? 'تعديل المشروع' : 'إنشاء مشروع جديد'}
               </Typography>
-              <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 500 }}>
+              <Typography 
+                variant="h6" 
+                color="text.secondary" 
+                sx={{ 
+                  fontWeight: 500,
+                  fontFamily: 'Sakkal Majalla'
+                }}
+              >
                 {isEdit ? 'تحديث معلومات المشروع الحالي' : 'إضافة مشروع جديد إلى النظام'}
               </Typography>
             </Box>
@@ -299,6 +314,7 @@ const ProjectForm = () => {
                 mb: 4,
                 borderRadius: 3,
                 border: '1px solid #fecaca',
+                fontFamily: 'Sakkal Majalla',
                 '& .MuiAlert-icon': { fontSize: 24 }
               }}
             >
@@ -313,12 +329,13 @@ const ProjectForm = () => {
                 mb: 4,
                 borderRadius: 3,
                 border: '1px solid #bbf7d0',
+                fontFamily: 'Sakkal Majalla',
                 '& .MuiAlert-icon': { fontSize: 24 }
               }}
             >
               <Box display="flex" alignItems="center" gap={1}>
                 <CheckCircleIcon />
-                <Typography sx={{ fontWeight: 600 }}>
+                <Typography sx={{ fontWeight: 600, fontFamily: 'Sakkal Majalla' }}>
                   تم {isEdit ? 'تحديث' : 'إنشاء'} المشروع بنجاح! جاري التوجيه...
                 </Typography>
               </Box>
@@ -352,7 +369,8 @@ const ProjectForm = () => {
                       <Typography sx={{
                         fontWeight: activeStep === index ? 700 : 500,
                         color: activeStep === index ? 'primary.main' : 'text.secondary',
-                        mt: 1
+                        mt: 1,
+                        fontFamily: 'Sakkal Majalla'
                       }}>
                         {step.label}
                       </Typography>
@@ -372,7 +390,8 @@ const ProjectForm = () => {
                       minWidth: 40,
                       height: 40,
                       borderRadius: 2,
-                      fontWeight: 600
+                      fontWeight: 600,
+                      fontFamily: 'Sakkal Majalla'
                     }}
                   >
                     {index + 1}
@@ -402,9 +421,13 @@ const ProjectForm = () => {
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 3,
                         fontSize: '1.1rem',
+                        fontFamily: 'Sakkal Majalla',
                         '&:hover .MuiOutlinedInput-notchedOutline': {
                           borderColor: 'primary.main',
                         }
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontFamily: 'Sakkal Majalla'
                       }
                     }}
                   />
@@ -417,18 +440,29 @@ const ProjectForm = () => {
                     value={formData.beneficiary_organization}
                     onChange={(e) => handleInputChange('beneficiary_organization', e.target.value)}
                     required
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': { 
+                        borderRadius: 3,
+                        fontFamily: 'Sakkal Majalla'
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontFamily: 'Sakkal Majalla'
+                      }
+                    }}
                   />
                 </Grid>
 
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth>
-                    <InputLabel>حالة المشروع</InputLabel>
+                    <InputLabel sx={{ fontFamily: 'Sakkal Majalla' }}>حالة المشروع</InputLabel>
                     <Select
                       value={formData.project_status}
                       onChange={(e) => handleInputChange('project_status', e.target.value)}
                       label="حالة المشروع"
-                      sx={{ borderRadius: 3 }}
+                      sx={{ 
+                        borderRadius: 3,
+                        fontFamily: 'Sakkal Majalla'
+                      }}
                     >
                       {projectStatuses.map((status) => (
                         <MenuItem key={status.value} value={status.value}>
@@ -441,7 +475,9 @@ const ProjectForm = () => {
                                 bgcolor: status.color
                               }}
                             />
-                            {status.label}
+                            <Typography sx={{ fontFamily: 'Sakkal Majalla' }}>
+                              {status.label}
+                            </Typography>
                           </Box>
                         </MenuItem>
                       ))}
@@ -457,7 +493,15 @@ const ProjectForm = () => {
                     rows={4}
                     value={formData.notes}
                     onChange={(e) => handleInputChange('notes', e.target.value)}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': { 
+                        borderRadius: 3,
+                        fontFamily: 'Sakkal Majalla'
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontFamily: 'Sakkal Majalla'
+                      }
+                    }}
                   />
                 </Grid>
               </Grid>
@@ -477,7 +521,15 @@ const ProjectForm = () => {
                     value={formData.university_project_manager}
                     onChange={(e) => handleInputChange('university_project_manager', e.target.value)}
                     required
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': { 
+                        borderRadius: 3,
+                        fontFamily: 'Sakkal Majalla'
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontFamily: 'Sakkal Majalla'
+                      }
+                    }}
                   />
                 </Grid>
 
@@ -487,7 +539,15 @@ const ProjectForm = () => {
                     label="المسؤول الفني بالجهة المستفيدة"
                     value={formData.technical_responsible_beneficiary}
                     onChange={(e) => handleInputChange('technical_responsible_beneficiary', e.target.value)}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': { 
+                        borderRadius: 3,
+                        fontFamily: 'Sakkal Majalla'
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontFamily: 'Sakkal Majalla'
+                      }
+                    }}
                   />
                 </Grid>
 
@@ -499,7 +559,15 @@ const ProjectForm = () => {
                     onChange={(e) => handleInputChange('university_project_team', e.target.value)}
                     multiline
                     rows={2}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': { 
+                        borderRadius: 3,
+                        fontFamily: 'Sakkal Majalla'
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontFamily: 'Sakkal Majalla'
+                      }
+                    }}
                   />
                 </Grid>
 
@@ -510,7 +578,15 @@ const ProjectForm = () => {
                     value={formData.executing_company_name}
                     onChange={(e) => handleInputChange('executing_company_name', e.target.value)}
                     required
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': { 
+                        borderRadius: 3,
+                        fontFamily: 'Sakkal Majalla'
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontFamily: 'Sakkal Majalla'
+                      }
+                    }}
                   />
                 </Grid>
 
@@ -520,7 +596,15 @@ const ProjectForm = () => {
                     label="مدير المشروع (الشركة المنفذة)"
                     value={formData.executing_company_project_manager}
                     onChange={(e) => handleInputChange('executing_company_project_manager', e.target.value)}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': { 
+                        borderRadius: 3,
+                        fontFamily: 'Sakkal Majalla'
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontFamily: 'Sakkal Majalla'
+                      }
+                    }}
                   />
                 </Grid>
 
@@ -532,7 +616,15 @@ const ProjectForm = () => {
                     onChange={(e) => handleInputChange('executing_company_representative', e.target.value)}
                     multiline
                     rows={2}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': { 
+                        borderRadius: 3,
+                        fontFamily: 'Sakkal Majalla'
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontFamily: 'Sakkal Majalla'
+                      }
+                    }}
                   />
                 </Grid>
               </Grid>
@@ -553,7 +645,15 @@ const ProjectForm = () => {
                     value={formData.project_cost}
                     onChange={(e) => handleInputChange('project_cost', e.target.value)}
                     required
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': { 
+                        borderRadius: 3,
+                        fontFamily: 'Sakkal Majalla'
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontFamily: 'Sakkal Majalla'
+                      }
+                    }}
                   />
                 </Grid>
 
@@ -563,7 +663,15 @@ const ProjectForm = () => {
                     label="رقم أمر الشراء (راسين)"
                     value={formData.purchase_order_number}
                     onChange={(e) => handleInputChange('purchase_order_number', e.target.value)}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': { 
+                        borderRadius: 3,
+                        fontFamily: 'Sakkal Majalla'
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontFamily: 'Sakkal Majalla'
+                      }
+                    }}
                   />
                 </Grid>
 
@@ -573,7 +681,15 @@ const ProjectForm = () => {
                     label="رقم التفويض"
                     value={formData.authorization_number}
                     onChange={(e) => handleInputChange('authorization_number', e.target.value)}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': { 
+                        borderRadius: 3,
+                        fontFamily: 'Sakkal Majalla'
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontFamily: 'Sakkal Majalla'
+                      }
+                    }}
                   />
                 </Grid>
 
@@ -586,7 +702,15 @@ const ProjectForm = () => {
                       <TextField
                         {...params}
                         fullWidth
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                        sx={{ 
+                          '& .MuiOutlinedInput-root': { 
+                            borderRadius: 3,
+                            fontFamily: 'Sakkal Majalla'
+                          },
+                          '& .MuiInputLabel-root': {
+                            fontFamily: 'Sakkal Majalla'
+                          }
+                        }}
                       />
                     )}
                   />
@@ -611,7 +735,15 @@ const ProjectForm = () => {
                         {...params}
                         fullWidth
                         required
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                        sx={{ 
+                          '& .MuiOutlinedInput-root': { 
+                            borderRadius: 3,
+                            fontFamily: 'Sakkal Majalla'
+                          },
+                          '& .MuiInputLabel-root': {
+                            fontFamily: 'Sakkal Majalla'
+                          }
+                        }}
                       />
                     )}
                   />
@@ -619,16 +751,21 @@ const ProjectForm = () => {
 
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth>
-                    <InputLabel>نوع بداية المشروع</InputLabel>
+                    <InputLabel sx={{ fontFamily: 'Sakkal Majalla' }}>نوع بداية المشروع</InputLabel>
                     <Select
                       value={formData.type_of_project_start}
                       onChange={(e) => handleInputChange('type_of_project_start', e.target.value)}
                       label="نوع بداية المشروع"
-                      sx={{ borderRadius: 3 }}
+                      sx={{ 
+                        borderRadius: 3,
+                        fontFamily: 'Sakkal Majalla'
+                      }}
                     >
                       {projectStartTypes.map((type) => (
                         <MenuItem key={type.value} value={type.value}>
-                          {type.label}
+                          <Typography sx={{ fontFamily: 'Sakkal Majalla' }}>
+                            {type.label}
+                          </Typography>
                         </MenuItem>
                       ))}
                     </Select>
@@ -642,7 +779,15 @@ const ProjectForm = () => {
                     type="number"
                     value={formData.project_duration_days}
                     onChange={(e) => handleInputChange('project_duration_days', e.target.value)}
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                    sx={{ 
+                      '& .MuiOutlinedInput-root': { 
+                        borderRadius: 3,
+                        fontFamily: 'Sakkal Majalla'
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontFamily: 'Sakkal Majalla'
+                      }
+                    }}
                   />
                 </Grid>
 
@@ -655,7 +800,15 @@ const ProjectForm = () => {
                       <TextField
                         {...params}
                         fullWidth
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                        sx={{ 
+                          '& .MuiOutlinedInput-root': { 
+                            borderRadius: 3,
+                            fontFamily: 'Sakkal Majalla'
+                          },
+                          '& .MuiInputLabel-root': {
+                            fontFamily: 'Sakkal Majalla'
+                          }
+                        }}
                       />
                     )}
                   />
@@ -670,7 +823,15 @@ const ProjectForm = () => {
                       <TextField
                         {...params}
                         fullWidth
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                        sx={{ 
+                          '& .MuiOutlinedInput-root': { 
+                            borderRadius: 3,
+                            fontFamily: 'Sakkal Majalla'
+                          },
+                          '& .MuiInputLabel-root': {
+                            fontFamily: 'Sakkal Majalla'
+                          }
+                        }}
                       />
                     )}
                   />
@@ -685,7 +846,15 @@ const ProjectForm = () => {
                       <TextField
                         {...params}
                         fullWidth
-                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                        sx={{ 
+                          '& .MuiOutlinedInput-root': { 
+                            borderRadius: 3,
+                            fontFamily: 'Sakkal Majalla'
+                          },
+                          '& .MuiInputLabel-root': {
+                            fontFamily: 'Sakkal Majalla'
+                          }
+                        }}
                       />
                     )}
                   />
@@ -701,8 +870,8 @@ const ProjectForm = () => {
               mt: 4
             }}>
               <CardContent sx={{ p: 4 }}>
-                <Box display="flex" justifyContent="space-between" alignItems="center">
-                  <Box display="flex" gap={2}>
+                <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
+                  <Box display="flex" gap={2} flexWrap="wrap">
                     <Button
                       variant="outlined"
                       onClick={() => setActiveStep(Math.max(0, activeStep - 1))}
@@ -711,7 +880,8 @@ const ProjectForm = () => {
                         borderRadius: 3,
                         px: 4,
                         py: 1.5,
-                        fontWeight: 600
+                        fontWeight: 600,
+                        fontFamily: 'Sakkal Majalla'
                       }}
                     >
                       السابق
@@ -724,14 +894,15 @@ const ProjectForm = () => {
                         borderRadius: 3,
                         px: 4,
                         py: 1.5,
-                        fontWeight: 600
+                        fontWeight: 600,
+                        fontFamily: 'Sakkal Majalla'
                       }}
                     >
                       التالي
                     </Button>
                   </Box>
 
-                  <Box display="flex" gap={2}>
+                  <Box display="flex" gap={2} flexWrap="wrap">
                     <Button
                       variant="outlined"
                       onClick={() => navigate('/projects')}
@@ -742,6 +913,7 @@ const ProjectForm = () => {
                         fontWeight: 600,
                         borderColor: 'grey.300',
                         color: 'grey.700',
+                        fontFamily: 'Sakkal Majalla',
                         '&:hover': {
                           borderColor: 'grey.400',
                           bgcolor: 'grey.50'
@@ -763,6 +935,7 @@ const ProjectForm = () => {
                         fontSize: '1rem',
                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                         boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)',
+                        fontFamily: 'Sakkal Majalla',
                         '&:hover': {
                           background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
                           boxShadow: '0 12px 40px rgba(102, 126, 234, 0.4)',
@@ -783,7 +956,7 @@ const ProjectForm = () => {
             </Card>
           </form>
         </Box>
-      </Container>
+      </Box>
     </Fade>
   );
 };

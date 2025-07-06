@@ -130,19 +130,22 @@ const Layout = ({ children }) => {
       </AppBar>
 
       <Container
-        maxWidth={false}
+        maxWidth="xl"
         sx={{
-          mt: 4,
-          mb: 4,
-          px: { xs: 2, sm: 3, md: 4 },
-          width: '100%'
+          mt: 2,
+          mb: 2,
+          px: { xs: 1, sm: 2, md: 3 },
+          maxWidth: '100% !important',
+          width: '100vw',
+          marginLeft: 0,
+          marginRight: 0
         }}
       >
         <Box sx={{
           background: 'rgba(255, 255, 255, 0.9)',
           backdropFilter: 'blur(20px)',
           borderRadius: 4,
-          p: { xs: 2, sm: 3, md: 4 },
+          p: { xs: 1.5, sm: 2, md: 3 },
           minHeight: 'calc(100vh - 200px)',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
           border: '1px solid rgba(255, 255, 255, 0.2)',
