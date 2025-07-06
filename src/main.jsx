@@ -40,7 +40,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { projectsAPI } from '../services/api';
+import { projectsAPI } from './services/api.js';
 
 const ProjectForm = () => {
   const navigate = useNavigate();
