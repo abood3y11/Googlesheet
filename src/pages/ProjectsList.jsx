@@ -20,8 +20,22 @@ import {
   IconButton,
   Tooltip,
   Paper,
-  Container
+  Container,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  FormLabel,
+  Menu,
+  ListItemIcon,
+  ListItemText,
+  Divider
 } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
@@ -37,9 +51,15 @@ import {
   AttachMoney as MoneyIcon,
   Warning as WarningIcon,
   Cancel as CancelIcon,
-  Info as InfoIcon
+  Info as InfoIcon,
+  Pause as PauseIcon,
+  PlayArrow as ResumeIcon,
+  Update as ExtendIcon,
+  MoreVert as MoreVertIcon,
+  Save as SaveIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
 import { projectsAPI } from '../services/api';
 
 const ProjectsList = () => {
@@ -47,7 +67,155 @@ const ProjectsList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, project: null });
+  const [actionDialog, setActionDialog] = useState({ open: false, type: '', project: null });
+  const [actionData, setActionData] = useState({});
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedProject, setSelectedProject] = useState(null);
   const navigate = useNavigate();
+
+  // Fake data for demonstration
+  const fakeProjects = [
+    {
+      id: 1,
+      project_name: "مشروع تطوير نظام إدارة المشاريع",
+      beneficiary_organization: "جامعة الملك سعود",
+      university_project_manager: "د. أحمد محمد السعيد",
+      technical_responsible_beneficiary: "م. سارة أحمد الزهراني",
+      university_project_team: "فريق التطوير التقني",
+      executing_company_name: "شركة التقنية المتقدمة",
+      executing_company_project_manager: "م. محمد علي الأحمد",
+      executing_company_representative: "أ. فاطمة سالم القحطاني",
+      authorization_number: "AUTH-2024-001",
+      project_authorization_date: "2024-01-15",
+      project_cost: 850000,
+      purchase_order_number: "PO-2024-001",
+      charter_preparation_date: "2024-01-10",
+      project_start_date: "2024-02-01",
+      type_of_project_start: "immediate",
+      project_duration_days: 180,
+      planned_project_end_date: "2024-07-30",
+      actual_project_end_date: null,
+      site_handover_date: "2024-01-25",
+      contract_signing_date: "2024-01-20",
+      project_status: "in_progress",
+      project_suspension_date: null,
+      suspension_duration: null,
+      project_resumption_date: null,
+      notes: "مشروع تطوير نظام إدارة المشاريع الجامعية"
+    },
+    {
+      id: 2,
+      project_name: "مشروع تطوير منصة التعلم الإلكتروني",
+      beneficiary_organization: "جامعة الملك فهد للبترول والمعادن",
+      university_project_manager: "د. خالد عبدالله النمر",
+      technical_responsible_beneficiary: "م. نورا محمد الشهري",
+      university_project_team: "فريق التعلم الإلكتروني",
+      executing_company_name: "شركة الحلول الذكية",
+      executing_company_project_manager: "م. عبدالرحمن صالح",
+      executing_company_representative: "أ. هند عبدالعزيز",
+      authorization_number: "AUTH-2024-002",
+      project_authorization_date: "2024-02-01",
+      project_cost: 1200000,
+      purchase_order_number: "PO-2024-002",
+      charter_preparation_date: "2024-01-25",
+      project_start_date: "2024-03-01",
+      type_of_project_start: "scheduled",
+      project_duration_days: 240,
+      planned_project_end_date: "2024-10-28",
+      actual_project_end_date: null,
+      site_handover_date: "2024-02-15",
+      contract_signing_date: "2024-02-10",
+      project_status: "planning",
+      project_suspension_date: null,
+      suspension_duration: null,
+      project_resumption_date: null,
+      notes: "منصة تعلم إلكتروني متطورة مع ذكاء اصطناعي"
+    },
+    {
+      id: 3,
+      project_name: "مشروع تطوير نظام إدارة المكتبات",
+      beneficiary_organization: "جامعة الإمام محمد بن سعود الإسلامية",
+      university_project_manager: "د. عبدالله محمد الراشد",
+      technical_responsible_beneficiary: "م. ريم أحمد العتيبي",
+      university_project_team: "فريق المكتبات الرقمية",
+      executing_company_name: "شركة النظم المتكاملة",
+      executing_company_project_manager: "م. يوسف عبدالرحمن",
+      executing_company_representative: "أ. مريم سعد الدوسري",
+      authorization_number: "AUTH-2024-003",
+      project_authorization_date: "2024-01-20",
+      project_cost: 650000,
+      purchase_order_number: "PO-2024-003",
+      charter_preparation_date: "2024-01-15",
+      project_start_date: "2024-02-15",
+      type_of_project_start: "immediate",
+      project_duration_days: 150,
+      planned_project_end_date: "2024-07-15",
+      actual_project_end_date: "2024-07-10",
+      site_handover_date: "2024-02-01",
+      contract_signing_date: "2024-01-30",
+      project_status: "completed",
+      project_suspension_date: null,
+      suspension_duration: null,
+      project_resumption_date: null,
+      notes: "نظام إدارة مكتبات رقمي شامل"
+    },
+    {
+      id: 4,
+      project_name: "مشروع تطوير تطبيق الخدمات الطلابية",
+      beneficiary_organization: "جامعة الملك عبدالعزيز",
+      university_project_manager: "د. فهد سليمان الغامدي",
+      technical_responsible_beneficiary: "م. لينا محمد الحربي",
+      university_project_team: "فريق الخدمات الطلابية",
+      executing_company_name: "شركة التطبيقات الذكية",
+      executing_company_project_manager: "م. أحمد عبدالله",
+      executing_company_representative: "أ. نوف محمد القرني",
+      authorization_number: "AUTH-2024-004",
+      project_authorization_date: "2024-03-01",
+      project_cost: 450000,
+      purchase_order_number: "PO-2024-004",
+      charter_preparation_date: "2024-02-25",
+      project_start_date: "2024-03-15",
+      type_of_project_start: "conditional",
+      project_duration_days: 120,
+      planned_project_end_date: "2024-07-15",
+      actual_project_end_date: null,
+      site_handover_date: "2024-03-10",
+      contract_signing_date: "2024-03-05",
+      project_status: "suspended",
+      project_suspension_date: "2024-05-01",
+      suspension_duration: 30,
+      project_resumption_date: null,
+      notes: "تطبيق موبايل للخدمات الطلابية"
+    },
+    {
+      id: 5,
+      project_name: "مشروع تطوير نظام إدارة الموارد البشرية",
+      beneficiary_organization: "جامعة الأميرة نورة بنت عبدالرحمن",
+      university_project_manager: "د. نادية عبدالله الصالح",
+      technical_responsible_beneficiary: "م. أمل سعد المطيري",
+      university_project_team: "فريق الموارد البشرية",
+      executing_company_name: "شركة الأنظمة المتطورة",
+      executing_company_project_manager: "م. سعد محمد العنزي",
+      executing_company_representative: "أ. رنا عبدالعزيز الشمري",
+      authorization_number: "AUTH-2024-005",
+      project_authorization_date: "2024-02-15",
+      project_cost: 750000,
+      purchase_order_number: "PO-2024-005",
+      charter_preparation_date: "2024-02-10",
+      project_start_date: "2024-04-01",
+      type_of_project_start: "scheduled",
+      project_duration_days: 200,
+      planned_project_end_date: "2024-10-20",
+      actual_project_end_date: null,
+      site_handover_date: "2024-03-25",
+      contract_signing_date: "2024-03-20",
+      project_status: "cancelled",
+      project_suspension_date: null,
+      suspension_duration: null,
+      project_resumption_date: null,
+      notes: "نظام شامل لإدارة الموارد البشرية - تم إلغاؤه لأسباب إدارية"
+    }
+  ];
 
   useEffect(() => {
     fetchProjects();
@@ -56,12 +224,14 @@ const ProjectsList = () => {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const data = await projectsAPI.getAllProjects();
-      setProjects(data);
-      setError(null);
+      // Use fake data instead of API call
+      setTimeout(() => {
+        setProjects(fakeProjects);
+        setError(null);
+        setLoading(false);
+      }, 1000);
     } catch (err) {
       setError(err.message);
-    } finally {
       setLoading(false);
     }
   };
@@ -74,6 +244,67 @@ const ProjectsList = () => {
     } catch (err) {
       setError(err.message);
     }
+  };
+
+  const handleActionMenuClick = (event, project) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedProject(project);
+  };
+
+  const handleActionMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedProject(null);
+  };
+
+  const openActionDialog = (type) => {
+    setActionDialog({ open: true, type, project: selectedProject });
+    setActionData({});
+    handleActionMenuClose();
+  };
+
+  const closeActionDialog = () => {
+    setActionDialog({ open: false, type: '', project: null });
+    setActionData({});
+  };
+
+  const handleActionSubmit = () => {
+    // Here you would normally send the action data to your backend
+    console.log('Action submitted:', {
+      type: actionDialog.type,
+      projectId: actionDialog.project?.id,
+      data: actionData
+    });
+    
+    // Update project status locally for demonstration
+    const updatedProjects = projects.map(project => {
+      if (project.id === actionDialog.project?.id) {
+        const updatedProject = { ...project };
+        
+        switch (actionDialog.type) {
+          case 'suspend':
+            updatedProject.project_status = 'suspended';
+            updatedProject.project_suspension_date = actionData.suspension_date;
+            updatedProject.suspension_duration = actionData.suspension_duration;
+            break;
+          case 'resume':
+            updatedProject.project_status = 'in_progress';
+            updatedProject.project_resumption_date = actionData.resumption_date;
+            break;
+          case 'extend':
+            updatedProject.planned_project_end_date = actionData.extension_end_date;
+            break;
+          case 'cancel':
+            updatedProject.project_status = 'cancelled';
+            break;
+        }
+        
+        return updatedProject;
+      }
+      return project;
+    });
+    
+    setProjects(updatedProjects);
+    closeActionDialog();
   };
 
   const getStatusConfig = (status) => {
@@ -220,7 +451,7 @@ const ProjectsList = () => {
     
     return (
       <Card sx={{
-        height: '380px',
+        height: '420px',
         borderRadius: 4,
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
         border: '1px solid rgba(0, 0, 0, 0.04)',
@@ -326,6 +557,19 @@ const ProjectsList = () => {
                   }}
                 >
                   <EditIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="أوامر التغيير">
+                <IconButton
+                  size="small"
+                  onClick={(e) => handleActionMenuClick(e, project)}
+                  sx={{
+                    bgcolor: 'info.50',
+                    color: 'info.main',
+                    '&:hover': { bgcolor: 'info.100' }
+                  }}
+                >
+                  <MoreVertIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
               <Tooltip title="حذف">
@@ -447,6 +691,416 @@ const ProjectsList = () => {
     );
   };
 
+  const ActionDialog = () => {
+    const getDialogConfig = () => {
+      switch (actionDialog.type) {
+        case 'suspend':
+          return {
+            title: 'إيقاف المشروع',
+            icon: <PauseIcon />,
+            color: '#f59e0b',
+            gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+          };
+        case 'resume':
+          return {
+            title: 'استئناف المشروع',
+            icon: <ResumeIcon />,
+            color: '#10b981',
+            gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+          };
+        case 'extend':
+          return {
+            title: 'تمديد المشروع',
+            icon: <ExtendIcon />,
+            color: '#06b6d4',
+            gradient: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)'
+          };
+        case 'cancel':
+          return {
+            title: 'إلغاء المشروع',
+            icon: <CancelIcon />,
+            color: '#ef4444',
+            gradient: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+          };
+        default:
+          return { title: '', icon: null, color: '', gradient: '' };
+      }
+    };
+
+    const config = getDialogConfig();
+
+    return (
+      <Dialog
+        open={actionDialog.open}
+        onClose={closeActionDialog}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            overflow: 'hidden'
+          }
+        }}
+      >
+        <DialogTitle sx={{
+          background: config.gradient,
+          color: 'white',
+          p: 3,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2
+        }}>
+          <Avatar sx={{
+            bgcolor: 'rgba(255, 255, 255, 0.2)',
+            backdropFilter: 'blur(10px)'
+          }}>
+            {config.icon}
+          </Avatar>
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: 700, fontFamily: 'Sakkal Majalla' }}>
+              {config.title}
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.9, fontFamily: 'Sakkal Majalla' }}>
+              {actionDialog.project?.project_name}
+            </Typography>
+          </Box>
+        </DialogTitle>
+        
+        <DialogContent sx={{ p: 4 }}>
+          <Grid container spacing={3}>
+            {actionDialog.type === 'suspend' && (
+              <>
+                <Grid item xs={12} md={6}>
+                  <DatePicker
+                    label="تاريخ الإيقاف"
+                    value={actionData.suspension_date ? dayjs(actionData.suspension_date) : null}
+                    onChange={(date) => setActionData(prev => ({ 
+                      ...prev, 
+                      suspension_date: date ? date.format('YYYY-MM-DD') : null 
+                    }))}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        fullWidth
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                            height: '56px',
+                            fontFamily: 'Sakkal Majalla'
+                          },
+                          '& .MuiInputLabel-root': {
+                            fontFamily: 'Sakkal Majalla'
+                          }
+                        }}
+                      />
+                    )}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="مدة الإيقاف (أيام)"
+                    type="number"
+                    value={actionData.suspension_duration || ''}
+                    onChange={(e) => setActionData(prev => ({ 
+                      ...prev, 
+                      suspension_duration: e.target.value 
+                    }))}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        height: '56px',
+                        fontFamily: 'Sakkal Majalla'
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontFamily: 'Sakkal Majalla'
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="ملاحظات الإيقاف"
+                    multiline
+                    rows={3}
+                    value={actionData.suspension_notes || ''}
+                    onChange={(e) => setActionData(prev => ({ 
+                      ...prev, 
+                      suspension_notes: e.target.value 
+                    }))}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        fontFamily: 'Sakkal Majalla'
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontFamily: 'Sakkal Majalla'
+                      }
+                    }}
+                  />
+                </Grid>
+              </>
+            )}
+
+            {actionDialog.type === 'resume' && (
+              <>
+                <Grid item xs={12} md={6}>
+                  <DatePicker
+                    label="تاريخ الاستئناف"
+                    value={actionData.resumption_date ? dayjs(actionData.resumption_date) : null}
+                    onChange={(date) => setActionData(prev => ({ 
+                      ...prev, 
+                      resumption_date: date ? date.format('YYYY-MM-DD') : null 
+                    }))}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        fullWidth
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                            height: '56px',
+                            fontFamily: 'Sakkal Majalla'
+                          },
+                          '& .MuiInputLabel-root': {
+                            fontFamily: 'Sakkal Majalla'
+                          }
+                        }}
+                      />
+                    )}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <DatePicker
+                    label="تاريخ نهاية المشروع بعد الاستئناف"
+                    value={actionData.resumption_end_date ? dayjs(actionData.resumption_end_date) : null}
+                    onChange={(date) => setActionData(prev => ({ 
+                      ...prev, 
+                      resumption_end_date: date ? date.format('YYYY-MM-DD') : null 
+                    }))}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        fullWidth
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                            height: '56px',
+                            fontFamily: 'Sakkal Majalla'
+                          },
+                          '& .MuiInputLabel-root': {
+                            fontFamily: 'Sakkal Majalla'
+                          }
+                        }}
+                      />
+                    )}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="ملاحظات الاستئناف"
+                    multiline
+                    rows={3}
+                    value={actionData.resumption_notes || ''}
+                    onChange={(e) => setActionData(prev => ({ 
+                      ...prev, 
+                      resumption_notes: e.target.value 
+                    }))}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        fontFamily: 'Sakkal Majalla'
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontFamily: 'Sakkal Majalla'
+                      }
+                    }}
+                  />
+                </Grid>
+              </>
+            )}
+
+            {actionDialog.type === 'extend' && (
+              <>
+                <Grid item xs={12}>
+                  <FormControl component="fieldset">
+                    <FormLabel 
+                      component="legend" 
+                      sx={{ 
+                        fontFamily: 'Sakkal Majalla', 
+                        fontWeight: 600, 
+                        color: 'text.primary',
+                        mb: 2
+                      }}
+                    >
+                      ادخل المدة أولاً ثم اختر نوعها
+                    </FormLabel>
+                    <RadioGroup
+                      row
+                      value={actionData.extension_type || 'days'}
+                      onChange={(e) => setActionData(prev => ({ 
+                        ...prev, 
+                        extension_type: e.target.value 
+                      }))}
+                    >
+                      <FormControlLabel
+                        value="days"
+                        control={<Radio />}
+                        label={<Typography sx={{ fontFamily: 'Sakkal Majalla' }}>يوم</Typography>}
+                      />
+                      <FormControlLabel
+                        value="weeks"
+                        control={<Radio />}
+                        label={<Typography sx={{ fontFamily: 'Sakkal Majalla' }}>أسبوع</Typography>}
+                      />
+                      <FormControlLabel
+                        value="months"
+                        control={<Radio />}
+                        label={<Typography sx={{ fontFamily: 'Sakkal Majalla' }}>شهر</Typography>}
+                      />
+                    </RadioGroup>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="مدة التمديد"
+                    type="number"
+                    value={actionData.extension_duration || ''}
+                    onChange={(e) => setActionData(prev => ({ 
+                      ...prev, 
+                      extension_duration: e.target.value 
+                    }))}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        height: '56px',
+                        fontFamily: 'Sakkal Majalla'
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontFamily: 'Sakkal Majalla'
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <DatePicker
+                    label="تاريخ نهاية المشروع بعد التمديد"
+                    value={actionData.extension_end_date ? dayjs(actionData.extension_end_date) : null}
+                    onChange={(date) => setActionData(prev => ({ 
+                      ...prev, 
+                      extension_end_date: date ? date.format('YYYY-MM-DD') : null 
+                    }))}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        fullWidth
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                            height: '56px',
+                            fontFamily: 'Sakkal Majalla'
+                          },
+                          '& .MuiInputLabel-root': {
+                            fontFamily: 'Sakkal Majalla'
+                          }
+                        }}
+                      />
+                    )}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="ملاحظات التمديد"
+                    multiline
+                    rows={3}
+                    value={actionData.extension_notes || ''}
+                    onChange={(e) => setActionData(prev => ({ 
+                      ...prev, 
+                      extension_notes: e.target.value 
+                    }))}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        fontFamily: 'Sakkal Majalla'
+                      },
+                      '& .MuiInputLabel-root': {
+                        fontFamily: 'Sakkal Majalla'
+                      }
+                    }}
+                  />
+                </Grid>
+              </>
+            )}
+
+            {actionDialog.type === 'cancel' && (
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="ملاحظات الإلغاء"
+                  multiline
+                  rows={4}
+                  value={actionData.cancellation_notes || ''}
+                  onChange={(e) => setActionData(prev => ({ 
+                    ...prev, 
+                    cancellation_notes: e.target.value 
+                  }))}
+                  placeholder="اذكر أسباب إلغاء المشروع والتفاصيل ذات الصلة..."
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      fontFamily: 'Sakkal Majalla'
+                    },
+                    '& .MuiInputLabel-root': {
+                      fontFamily: 'Sakkal Majalla'
+                    }
+                  }}
+                />
+              </Grid>
+            )}
+          </Grid>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 3, gap: 2 }}>
+          <Button
+            onClick={closeActionDialog}
+            variant="outlined"
+            sx={{
+              borderRadius: 3,
+              px: 4,
+              py: 1.5,
+              fontWeight: 600,
+              fontFamily: 'Sakkal Majalla'
+            }}
+          >
+            إلغاء
+          </Button>
+          <Button
+            onClick={handleActionSubmit}
+            variant="contained"
+            startIcon={<SaveIcon />}
+            sx={{
+              borderRadius: 3,
+              px: 4,
+              py: 1.5,
+              fontWeight: 600,
+              background: config.gradient,
+              fontFamily: 'Sakkal Majalla',
+              '&:hover': {
+                opacity: 0.9
+              }
+            }}
+          >
+            حفظ التغييرات
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
+
   if (loading) {
     return (
       <Box sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3 } }}>
@@ -462,7 +1116,7 @@ const ProjectsList = () => {
           <Grid container spacing={3}>
             {[1, 2, 3, 4, 5, 6].map((item) => (
               <Grid item xs={12} sm={6} lg={4} xl={3} key={item}>
-                <Skeleton variant="rectangular" height={380} sx={{ borderRadius: 3 }} />
+                <Skeleton variant="rectangular" height={420} sx={{ borderRadius: 3 }} />
               </Grid>
             ))}
           </Grid>
@@ -503,7 +1157,7 @@ const ProjectsList = () => {
                   fontSize: { xs: '1rem', sm: '1.125rem' }
                 }}
               >
-                نظرة شاملة على جميع المشاريع والإحصائيات
+                نظرة شاملة على جميع المشاريع والإحصائيات مع أوامر التغيير
               </Typography>
             </Box>
             <Button
@@ -645,6 +1299,50 @@ const ProjectsList = () => {
               ))}
             </Grid>
           )}
+
+          {/* Action Menu */}
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleActionMenuClose}
+            PaperProps={{
+              sx: {
+                borderRadius: 3,
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
+                border: '1px solid rgba(0, 0, 0, 0.05)',
+                minWidth: 200
+              }
+            }}
+          >
+            <MenuItem onClick={() => openActionDialog('suspend')} sx={{ py: 1.5, fontFamily: 'Sakkal Majalla' }}>
+              <ListItemIcon>
+                <PauseIcon sx={{ color: '#f59e0b' }} />
+              </ListItemIcon>
+              <ListItemText primary="إيقاف المشروع" />
+            </MenuItem>
+            <MenuItem onClick={() => openActionDialog('resume')} sx={{ py: 1.5, fontFamily: 'Sakkal Majalla' }}>
+              <ListItemIcon>
+                <ResumeIcon sx={{ color: '#10b981' }} />
+              </ListItemIcon>
+              <ListItemText primary="استئناف المشروع" />
+            </MenuItem>
+            <MenuItem onClick={() => openActionDialog('extend')} sx={{ py: 1.5, fontFamily: 'Sakkal Majalla' }}>
+              <ListItemIcon>
+                <ExtendIcon sx={{ color: '#06b6d4' }} />
+              </ListItemIcon>
+              <ListItemText primary="تمديد المشروع" />
+            </MenuItem>
+            <Divider />
+            <MenuItem onClick={() => openActionDialog('cancel')} sx={{ py: 1.5, fontFamily: 'Sakkal Majalla' }}>
+              <ListItemIcon>
+                <CancelIcon sx={{ color: '#ef4444' }} />
+              </ListItemIcon>
+              <ListItemText primary="إلغاء المشروع" />
+            </MenuItem>
+          </Menu>
+
+          {/* Action Dialog */}
+          <ActionDialog />
 
           {/* Delete Confirmation Dialog */}
           <Dialog
