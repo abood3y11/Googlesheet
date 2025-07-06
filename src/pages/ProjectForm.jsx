@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -13,14 +13,12 @@ import {
   Select,
   Card,
   CardContent,
-  Fade,
+  Collapse,
+  IconButton,
   Avatar,
   Stepper,
   Step,
   StepLabel,
-  Collapse,
-  IconButton,
-  Divider,
   Paper,
   Stack
 } from '@mui/material';
@@ -28,19 +26,29 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import {
   Save as SaveIcon,
   ArrowBack as BackIcon,
-  Business as BusinessIcon,
+  Assignment as AssignmentIcon,
   Person as PersonIcon,
   AttachMoney as MoneyIcon,
   Schedule as ScheduleIcon,
-  Assignment as AssignmentIcon,
+  Description as DescriptionIcon,
   CheckCircle as CheckCircleIcon,
   Add as AddIcon,
-  Delete as DeleteIcon,
-  Description as DescriptionIcon
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { projectsAPI } from '../services/api';
+
+// TextField Component (memoized to prevent re-render)
+const TextFieldWrapper = React.memo(({ field, label, value, onChange, ...props }) => (
+  <TextField
+    fullWidth
+    label={label}
+    value={value}
+    onChange={(e) => onChange(field, e.target.value)}
+    {...props}
+  />
+));
 
 const ProjectForm = () => {
   const navigate = useNavigate();
@@ -89,17 +97,49 @@ const ProjectForm = () => {
     { label: 'بيانات الرخص', icon: <DescriptionIcon /> },
   ];
 
-  useEffect(() => {
-    if (isEdit) {
-      fetchProject();
+  // Memoized styles
+  const fieldStyles = useMemo(() => ({
+    '& .MuiOutlinedInput-root': {
+      borderRadius: 2,
+      height: '56px',
+      fontFamily: 'Sakkal Majalla',
+      fontSize: '1rem',
+      '&:hover .MuiOutlinedInput-notchedOutline': {
+        borderColor: 'primary.main',
+      },
+      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+        borderWidth: 2,
+        borderColor: 'primary.main',
+      }
+    },
+    '& .MuiInputLabel-root': {
+      fontFamily: 'Sakkal Majalla',
+      fontSize: '1rem',
+      fontWeight: 500,
+      '&.Mui-focused': {
+        color: 'primary.main',
+        fontWeight: 600
+      }
+    },
+    '& .MuiSelect-select': {
+      fontFamily: 'Sakkal Majalla',
+      fontSize: '1rem'
     }
-  }, [id, isEdit]);
+  }), []);
 
-  const fetchProject = async () => {
+  // Memoized functions
+  const handleInputChange = useCallback((field, value) => {
+    setFormData(prevData => ({
+      ...prevData,
+      [field]: value
+    }));
+  }, []);
+
+  const fetchProject = useCallback(async () => {
     try {
       setLoading(true);
       const project = await projectsAPI.getProjectById(id);
-      
+
       const formattedProject = { ...project };
       const dateFields = [
         'project_authorization_date',
@@ -112,16 +152,15 @@ const ProjectForm = () => {
         'project_suspension_date',
         'project_resumption_date',
       ];
-      
+
       dateFields.forEach(field => {
         if (formattedProject[field]) {
           formattedProject[field] = dayjs(formattedProject[field]);
         }
       });
-      
+
       setFormData(formattedProject);
-      
-      // Load licenses if they exist
+
       if (project.licenses && project.licenses.length > 0) {
         const formattedLicenses = project.licenses.map(license => ({
           ...license,
@@ -135,16 +174,14 @@ const ProjectForm = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const handleInputChange = (field, value) => {
-    setFormData(prevData => ({
-      ...prevData,
-      [field]: value
-    }));
-  };
+  useEffect(() => {
+    if (isEdit) {
+      fetchProject();
+    }
+  }, [fetchProject, isEdit]);
 
-  // Helper functions for calculations
   const calculateEndDate = (startDate, duration) => {
     if (startDate && duration) {
       return dayjs(startDate).add(parseInt(duration), 'day');
@@ -159,45 +196,33 @@ const ProjectForm = () => {
     return '';
   };
 
-  const handleStartDateChange = (date) => {
+  const handleStartDateChange = useCallback((date) => {
     handleInputChange('project_start_date', date);
-    
-    // Auto-calculate end date if duration exists
     if (date && formData.project_duration_days) {
       const endDate = calculateEndDate(date, formData.project_duration_days);
-      if (endDate) {
-        handleInputChange('planned_project_end_date', endDate);
-      }
+      if (endDate) handleInputChange('planned_project_end_date', endDate);
     }
-  };
+  }, [formData.project_duration_days, handleInputChange]);
 
-  const handleDurationChange = (duration) => {
+  const handleDurationChange = useCallback((duration) => {
     handleInputChange('project_duration_days', duration);
-    
-    // Auto-calculate end date if start date exists
     if (formData.project_start_date && duration) {
       const endDate = calculateEndDate(formData.project_start_date, duration);
-      if (endDate) {
-        handleInputChange('planned_project_end_date', endDate);
-      }
+      if (endDate) handleInputChange('planned_project_end_date', endDate);
     }
-  };
+  }, [formData.project_start_date, handleInputChange]);
 
-  const handleEndDateChange = (date) => {
+  const handleEndDateChange = useCallback((date) => {
     handleInputChange('planned_project_end_date', date);
-    
-    // Auto-calculate duration if start date exists
     if (formData.project_start_date && date) {
       const duration = calculateDuration(formData.project_start_date, date);
-      if (duration > 0) {
-        handleInputChange('project_duration_days', duration.toString());
-      }
+      if (duration > 0) handleInputChange('project_duration_days', duration.toString());
     }
-  };
+  }, [formData.project_start_date, handleInputChange]);
 
-  const addLicense = () => {
+  const addLicense = useCallback(() => {
     const newLicense = {
-      id: Date.now(), // Temporary ID for new licenses
+      id: Date.now(),
       license_number: '',
       license_name: '',
       license_start_date: null,
@@ -205,24 +230,24 @@ const ProjectForm = () => {
       notes: '',
     };
     setLicenses(prev => [...prev, newLicense]);
-  };
+  }, []);
 
-  const removeLicense = (index) => {
+  const removeLicense = useCallback((index) => {
     setLicenses(prev => prev.filter((_, i) => i !== index));
-  };
+  }, []);
 
-  const updateLicense = (index, field, value) => {
-    setLicenses(prev => prev.map((license, i) => 
+  const updateLicense = useCallback((index, field, value) => {
+    setLicenses(prev => prev.map((license, i) =>
       i === index ? { ...license, [field]: value } : license
     ));
-  };
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     try {
       setLoading(true);
       setError(null);
-      
+
       const submitData = { ...formData };
       const dateFields = [
         'project_authorization_date',
@@ -235,53 +260,36 @@ const ProjectForm = () => {
         'project_suspension_date',
         'project_resumption_date',
       ];
-      
+
       dateFields.forEach(field => {
         if (submitData[field] && dayjs.isDayjs(submitData[field])) {
           submitData[field] = submitData[field].format('YYYY-MM-DD');
         }
       });
 
-      if (submitData.project_cost) {
-        submitData.project_cost = parseFloat(submitData.project_cost);
-      }
-      if (submitData.project_duration_days) {
-        submitData.project_duration_days = parseInt(submitData.project_duration_days);
-      }
-      if (submitData.suspension_duration) {
-        submitData.suspension_duration = parseInt(submitData.suspension_duration);
-      }
+      submitData.licenses = licenses.map(license => ({
+        ...license,
+        license_start_date: license.license_start_date ? license.license_start_date.format('YYYY-MM-DD') : null,
+        license_end_date: license.license_end_date ? license.license_end_date.format('YYYY-MM-DD') : null,
+      }));
 
-      // Format licenses data
-      const formattedLicenses = licenses.map(license => {
-        const formattedLicense = { ...license };
-        if (formattedLicense.license_start_date && dayjs.isDayjs(formattedLicense.license_start_date)) {
-          formattedLicense.license_start_date = formattedLicense.license_start_date.format('YYYY-MM-DD');
-        }
-        if (formattedLicense.license_end_date && dayjs.isDayjs(formattedLicense.license_end_date)) {
-          formattedLicense.license_end_date = formattedLicense.license_end_date.format('YYYY-MM-DD');
-        }
-        return formattedLicense;
-      });
-      
-      submitData.licenses = formattedLicenses;
       if (isEdit) {
         await projectsAPI.updateProject(id, submitData);
       } else {
         await projectsAPI.createProject(submitData);
       }
-      
+
       setSuccess(true);
-      setTimeout(() => {
-        navigate('/projects');
-      }, 2000);
-      
+      setTimeout(() => navigate('/projects'), 2000);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  // --- Rest of the UI as it is --- (keep all your UI code here)
+
 
   const projectStatuses = [
     { value: 'planning', label: 'تخطيط', color: '#3b82f6' },
