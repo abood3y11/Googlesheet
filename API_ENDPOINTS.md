@@ -60,6 +60,10 @@ POST /projects
 **Request Body:**
 ```json
 {
+  "license_start_date": "2024-01-01",
+  "license_end_date": "2024-12-31", 
+  "has_license": true,
+  "license_notes": "رخصة سارية المفعول",
   "project_name": "مشروع جديد",
   "beneficiary_organization": "جامعة الملك سعود",
   "university_project_manager": "د. أحمد محمد",
@@ -129,6 +133,7 @@ GET /projects/status/{status}
 - `conditional` - مشروط
 
 ### Required Fields:
+- `has_license` (boolean)
 - `project_name` (string)
 - `beneficiary_organization` (string)
 - `university_project_manager` (string)
@@ -137,6 +142,9 @@ GET /projects/status/{status}
 - `project_start_date` (date)
 
 ### Optional Fields:
+- `license_start_date` (date)
+- `license_end_date` (date) 
+- `license_notes` (string)
 All other fields are optional and can be null/empty
 
 ### Date Format:
