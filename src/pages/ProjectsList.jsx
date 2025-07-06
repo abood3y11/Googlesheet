@@ -617,11 +617,14 @@ const ProjectsList = () => {
               <Tooltip title="أوامر التغيير">
                 <IconButton
                   size="small"
-                  onClick={(e) => handleActionMenuOpen(e, project)}
-                  sx={{
-                    bgcolor: 'info.50',
-                    color: 'info.main',
-                    '&:hover': { bgcolor: 'info.100' }
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setActionMenuState({ 
+                      open: true, 
+                      anchorEl: event.currentTarget, 
+                      project 
+                    });
+                  }}
                   }}
                 >
                   <MoreVertIcon fontSize="small" />
@@ -1259,9 +1262,13 @@ const ProjectsList = () => {
 
           {/* Action Menu */}
           <Menu
-            anchorEl={actionMenu.anchorEl}
-            open={Boolean(actionMenu.anchorEl)}
-            onClose={handleActionMenuClose}
+              vertical: 'top',
+              horizontal: 'left',
+            onClose={() => setActionMenuState({ 
+              open: false, 
+              vertical: 'top',
+              horizontal: 'right',
+            })}
             PaperProps={{
               sx: {
                 borderRadius: 3,
@@ -1289,11 +1296,19 @@ const ProjectsList = () => {
             
             {actionMenu.project?.project_status === 'suspended' && (
               <MenuItem onClick={() => handleActionClick('resume')}>
-                <ListItemIcon>
+                  setActionMenuState({ 
+                    open: false, 
+                    anchorEl: null, 
+                    project: null 
+                  });
                   <ResumeIcon sx={{ color: '#10b981' }} />
                 </ListItemIcon>
                 <ListItemText 
-                  primary="استئناف المشروع" 
+                  setActionMenuState({ 
+                    open: false, 
+                    anchorEl: null, 
+                    project: null 
+                  });
                   sx={{ '& .MuiTypography-root': { fontFamily: 'Sakkal Majalla' } }}
                 />
               </MenuItem>
@@ -1306,7 +1321,11 @@ const ProjectsList = () => {
                   <ExtendIcon sx={{ color: '#06b6d4' }} />
                 </ListItemIcon>
                 <ListItemText 
-                  primary="تمديد المشروع" 
+                  setActionMenuState({ 
+                    open: false, 
+                    anchorEl: null, 
+                    project: null 
+                  });
                   sx={{ '& .MuiTypography-root': { fontFamily: 'Sakkal Majalla' } }}
                 />
               </MenuItem>
@@ -1320,7 +1339,11 @@ const ProjectsList = () => {
                   <ListItemIcon>
                     <CancelProjectIcon sx={{ color: '#ef4444' }} />
                   </ListItemIcon>
-                  <ListItemText 
+                  setActionMenuState({ 
+                    open: false, 
+                    anchorEl: null, 
+                    project: null 
+                  });
                     primary="إلغاء المشروع" 
                     sx={{ '& .MuiTypography-root': { fontFamily: 'Sakkal Majalla' } }}
                   />
