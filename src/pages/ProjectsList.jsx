@@ -33,7 +33,16 @@ import {
   Menu,
   ListItemIcon,
   ListItemText,
-  Divider
+  Divider,
+  ToggleButton,
+  ToggleButtonGroup,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import {
@@ -56,7 +65,11 @@ import {
   PlayArrow as ResumeIcon,
   Update as ExtendIcon,
   MoreVert as MoreVertIcon,
-  Save as SaveIcon
+  Save as SaveIcon,
+  ViewModule as CardViewIcon,
+  ViewKanban as KanbanIcon,
+  ViewList as ListViewIcon,
+  DragIndicator as DragIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -71,6 +84,9 @@ const ProjectsList = () => {
   const [actionData, setActionData] = useState({});
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
+  const [viewMode, setViewMode] = useState('cards'); // 'cards', 'kanban', 'list'
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const navigate = useNavigate();
 
   // Fake data for demonstration
@@ -214,6 +230,34 @@ const ProjectsList = () => {
       suspension_duration: null,
       project_resumption_date: null,
       notes: "نظام شامل لإدارة الموارد البشرية - تم إلغاؤه لأسباب إدارية"
+    },
+    {
+      id: 6,
+      project_name: "مشروع تطوير نظام إدارة الامتحانات",
+      beneficiary_organization: "جامعة الملك خالد",
+      university_project_manager: "د. محمد عبدالرحمن الشهري",
+      technical_responsible_beneficiary: "م. عبير أحمد القحطاني",
+      university_project_team: "فريق الامتحانات الإلكترونية",
+      executing_company_name: "شركة التقنيات التعليمية",
+      executing_company_project_manager: "م. خالد سعد العتيبي",
+      executing_company_representative: "أ. منى عبدالله الدوسري",
+      authorization_number: "AUTH-2024-006",
+      project_authorization_date: "2024-03-10",
+      project_cost: 920000,
+      purchase_order_number: "PO-2024-006",
+      charter_preparation_date: "2024-03-05",
+      project_start_date: "2024-04-15",
+      type_of_project_start: "scheduled",
+      project_duration_days: 160,
+      planned_project_end_date: "2024-09-25",
+      actual_project_end_date: null,
+      site_handover_date: "2024-04-10",
+      contract_signing_date: "2024-04-05",
+      project_status: "planning",
+      project_suspension_date: null,
+      suspension_duration: null,
+      project_resumption_date: null,
+      notes: "نظام شامل لإدارة الامتحانات الإلكترونية"
     }
   ];
 
@@ -369,6 +413,15 @@ const ProjectsList = () => {
   const inProgressProjects = projects.filter(p => p.project_status === 'in_progress').length;
   const totalBudget = projects.reduce((sum, p) => sum + (p.project_cost || 0), 0);
 
+  // Group projects by status for Kanban view
+  const groupedProjects = {
+    planning: projects.filter(p => p.project_status === 'planning'),
+    in_progress: projects.filter(p => p.project_status === 'in_progress'),
+    suspended: projects.filter(p => p.project_status === 'suspended'),
+    completed: projects.filter(p => p.project_status === 'completed'),
+    cancelled: projects.filter(p => p.project_status === 'cancelled'),
+  };
+
   const StatCard = ({ title, value, icon, gradient, subtitle }) => (
     <Card sx={{
       background: gradient,
@@ -446,12 +499,12 @@ const ProjectsList = () => {
     </Card>
   );
 
-  const ProjectCard = ({ project }) => {
+  const ProjectCard = ({ project, isKanban = false }) => {
     const statusConfig = getStatusConfig(project.project_status);
     
     return (
       <Card sx={{
-        height: '420px',
+        height: isKanban ? '320px' : '420px',
         borderRadius: 4,
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
         border: '1px solid rgba(0, 0, 0, 0.04)',
@@ -460,8 +513,9 @@ const ProjectsList = () => {
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
+        cursor: isKanban ? 'grab' : 'default',
         '&:hover': {
-          transform: 'translateY(-8px)',
+          transform: 'translateY(-4px)',
           boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)',
           '& .project-actions': {
             opacity: 1,
@@ -479,7 +533,7 @@ const ProjectsList = () => {
         }
       }}>
         <CardContent sx={{ 
-          p: 3, 
+          p: isKanban ? 2.5 : 3, 
           height: '100%', 
           display: 'flex', 
           flexDirection: 'column',
@@ -489,7 +543,7 @@ const ProjectsList = () => {
           <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
             <Box flex={1}>
               <Typography
-                variant="h6"
+                variant={isKanban ? "subtitle1" : "h6"}
                 sx={{
                   fontWeight: 700,
                   mb: 1,
@@ -500,28 +554,30 @@ const ProjectsList = () => {
                   WebkitBoxOrient: 'vertical',
                   overflow: 'hidden',
                   fontFamily: 'Sakkal Majalla',
-                  fontSize: '1.25rem',
-                  minHeight: '2.6rem'
+                  fontSize: isKanban ? '1rem' : '1.25rem',
+                  minHeight: isKanban ? '2rem' : '2.6rem'
                 }}
               >
                 {project.project_name}
               </Typography>
-              <Chip
-                icon={statusConfig.icon}
-                label={statusConfig.label}
-                sx={{
-                  bgcolor: statusConfig.bg,
-                  color: statusConfig.color,
-                  border: `2px solid ${statusConfig.border}`,
-                  fontWeight: 700,
-                  fontSize: '0.875rem',
-                  height: 32,
-                  fontFamily: 'Sakkal Majalla',
-                  '& .MuiChip-icon': {
-                    color: statusConfig.color
-                  }
-                }}
-              />
+              {!isKanban && (
+                <Chip
+                  icon={statusConfig.icon}
+                  label={statusConfig.label}
+                  sx={{
+                    bgcolor: statusConfig.bg,
+                    color: statusConfig.color,
+                    border: `2px solid ${statusConfig.border}`,
+                    fontWeight: 700,
+                    fontSize: '0.875rem',
+                    height: 32,
+                    fontFamily: 'Sakkal Majalla',
+                    '& .MuiChip-icon': {
+                      color: statusConfig.color
+                    }
+                  }}
+                />
+              )}
             </Box>
             <Box
               className="project-actions"
@@ -546,19 +602,6 @@ const ProjectsList = () => {
                   <ViewIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="تعديل">
-                <IconButton
-                  size="small"
-                  onClick={() => navigate(`/projects/${project.id}/edit`)}
-                  sx={{
-                    bgcolor: 'warning.50',
-                    color: 'warning.main',
-                    '&:hover': { bgcolor: 'warning.100' }
-                  }}
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
               <Tooltip title="أوامر التغيير">
                 <IconButton
                   size="small"
@@ -572,34 +615,21 @@ const ProjectsList = () => {
                   <MoreVertIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="حذف">
-                <IconButton
-                  size="small"
-                  onClick={() => setDeleteDialog({ open: true, project })}
-                  sx={{
-                    bgcolor: 'error.50',
-                    color: 'error.main',
-                    '&:hover': { bgcolor: 'error.100' }
-                  }}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
             </Box>
           </Box>
 
           {/* Content */}
           <Box flex={1} display="flex" flexDirection="column" justifyContent="space-between">
-            <Stack spacing={2.5}>
+            <Stack spacing={isKanban ? 1.5 : 2.5}>
               <Box display="flex" alignItems="center" gap={1.5}>
-                <BusinessIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                <BusinessIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
                 <Typography 
                   variant="body2" 
                   color="text.secondary" 
                   sx={{ 
                     fontWeight: 500,
                     fontFamily: 'Sakkal Majalla',
-                    fontSize: '1rem',
+                    fontSize: '0.875rem',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap'
@@ -610,32 +640,14 @@ const ProjectsList = () => {
               </Box>
               
               <Box display="flex" alignItems="center" gap={1.5}>
-                <PersonIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
-                <Typography 
-                  variant="body2" 
-                  color="text.secondary" 
-                  sx={{ 
-                    fontWeight: 500,
-                    fontFamily: 'Sakkal Majalla',
-                    fontSize: '1rem',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {project.university_project_manager || 'غير محدد'}
-                </Typography>
-              </Box>
-
-              <Box display="flex" alignItems="center" gap={1.5}>
-                <MoneyIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                <MoneyIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
                 <Typography 
                   variant="body2" 
                   color="text.secondary" 
                   sx={{ 
                     fontWeight: 600,
                     fontFamily: 'Sakkal Majalla',
-                    fontSize: '1rem',
+                    fontSize: '0.875rem',
                     color: 'primary.main'
                   }}
                 >
@@ -643,29 +655,51 @@ const ProjectsList = () => {
                 </Typography>
               </Box>
 
-              <Box display="flex" alignItems="center" gap={1.5}>
-                <CalendarIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
-                <Typography 
-                  variant="body2" 
-                  color="text.secondary" 
-                  sx={{ 
-                    fontWeight: 500,
-                    fontFamily: 'Sakkal Majalla',
-                    fontSize: '1rem'
-                  }}
-                >
-                  {formatDate(project.project_start_date)}
-                </Typography>
-              </Box>
+              {!isKanban && (
+                <>
+                  <Box display="flex" alignItems="center" gap={1.5}>
+                    <PersonIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      sx={{ 
+                        fontWeight: 500,
+                        fontFamily: 'Sakkal Majalla',
+                        fontSize: '0.875rem',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {project.university_project_manager || 'غير محدد'}
+                    </Typography>
+                  </Box>
+
+                  <Box display="flex" alignItems="center" gap={1.5}>
+                    <CalendarIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      sx={{ 
+                        fontWeight: 500,
+                        fontFamily: 'Sakkal Majalla',
+                        fontSize: '0.875rem'
+                      }}
+                    >
+                      {formatDate(project.project_start_date)}
+                    </Typography>
+                  </Box>
+                </>
+              )}
             </Stack>
 
             {/* Footer */}
-            <Box mt={3} pt={2} borderTop="1px solid" borderColor="divider">
+            <Box mt={isKanban ? 2 : 3} pt={2} borderTop="1px solid" borderColor="divider">
               <Box display="flex" justifyContent="space-between" alignItems="center">
                 <Typography 
                   variant="caption" 
                   color="text.secondary"
-                  sx={{ fontFamily: 'Sakkal Majalla', fontSize: '0.875rem' }}
+                  sx={{ fontFamily: 'Sakkal Majalla', fontSize: '0.75rem' }}
                 >
                   المعرف: {project.id}
                 </Typography>
@@ -676,18 +710,238 @@ const ProjectsList = () => {
                     fontWeight: 600,
                     borderRadius: 2,
                     textTransform: 'none',
-                    px: 2,
+                    px: 1.5,
                     fontFamily: 'Sakkal Majalla',
-                    fontSize: '0.875rem'
+                    fontSize: '0.75rem'
                   }}
                 >
-                  عرض التفاصيل
+                  عرض
                 </Button>
               </Box>
             </Box>
           </Box>
         </CardContent>
       </Card>
+    );
+  };
+
+  const KanbanColumn = ({ title, projects, statusConfig }) => (
+    <Paper sx={{
+      p: 2,
+      borderRadius: 3,
+      bgcolor: statusConfig.bg,
+      border: `2px solid ${statusConfig.border}`,
+      minHeight: '600px',
+      width: '300px',
+      flexShrink: 0
+    }}>
+      <Box display="flex" alignItems="center" gap={2} mb={3}>
+        <Avatar sx={{
+          bgcolor: statusConfig.color,
+          width: 32,
+          height: 32
+        }}>
+          {statusConfig.icon}
+        </Avatar>
+        <Typography variant="h6" sx={{
+          fontWeight: 700,
+          color: statusConfig.color,
+          fontFamily: 'Sakkal Majalla'
+        }}>
+          {title}
+        </Typography>
+        <Chip 
+          label={projects.length} 
+          size="small" 
+          sx={{
+            bgcolor: statusConfig.color,
+            color: 'white',
+            fontWeight: 600,
+            fontFamily: 'Sakkal Majalla'
+          }}
+        />
+      </Box>
+      
+      <Stack spacing={2}>
+        {projects.map((project) => (
+          <ProjectCard key={project.id} project={project} isKanban={true} />
+        ))}
+      </Stack>
+    </Paper>
+  );
+
+  const ListView = () => {
+    const handleChangePage = (event, newPage) => {
+      setPage(newPage);
+    };
+
+    const handleChangeRowsPerPage = (event) => {
+      setRowsPerPage(parseInt(event.target.value, 10));
+      setPage(0);
+    };
+
+    const paginatedProjects = projects.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+    return (
+      <Paper sx={{ borderRadius: 3, overflow: 'hidden' }}>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: 'grey.50' }}>
+                <TableCell sx={{ fontWeight: 700, fontFamily: 'Sakkal Majalla' }}>اسم المشروع</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontFamily: 'Sakkal Majalla' }}>الجهة المستفيدة</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontFamily: 'Sakkal Majalla' }}>مدير المشروع</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontFamily: 'Sakkal Majalla' }}>التكلفة</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontFamily: 'Sakkal Majalla' }}>الحالة</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontFamily: 'Sakkal Majalla' }}>تاريخ البداية</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontFamily: 'Sakkal Majalla' }}>الإجراءات</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {paginatedProjects.map((project) => {
+                const statusConfig = getStatusConfig(project.project_status);
+                return (
+                  <TableRow 
+                    key={project.id}
+                    sx={{ 
+                      '&:hover': { bgcolor: 'grey.50' },
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <TableCell>
+                      <Typography sx={{ 
+                        fontWeight: 600, 
+                        fontFamily: 'Sakkal Majalla',
+                        maxWidth: '200px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {project.project_name}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography sx={{ 
+                        fontFamily: 'Sakkal Majalla',
+                        maxWidth: '150px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {project.beneficiary_organization}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography sx={{ 
+                        fontFamily: 'Sakkal Majalla',
+                        maxWidth: '150px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {project.university_project_manager}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography sx={{ 
+                        fontWeight: 600, 
+                        color: 'primary.main',
+                        fontFamily: 'Sakkal Majalla'
+                      }}>
+                        {formatCurrency(project.project_cost)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        icon={statusConfig.icon}
+                        label={statusConfig.label}
+                        size="small"
+                        sx={{
+                          bgcolor: statusConfig.bg,
+                          color: statusConfig.color,
+                          border: `1px solid ${statusConfig.border}`,
+                          fontWeight: 600,
+                          fontFamily: 'Sakkal Majalla',
+                          '& .MuiChip-icon': {
+                            color: statusConfig.color
+                          }
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography sx={{ fontFamily: 'Sakkal Majalla' }}>
+                        {formatDate(project.project_start_date)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Box display="flex" gap={1}>
+                        <Tooltip title="عرض التفاصيل">
+                          <IconButton
+                            size="small"
+                            onClick={() => navigate(`/projects/${project.id}`)}
+                            sx={{
+                              bgcolor: 'primary.50',
+                              color: 'primary.main',
+                              '&:hover': { bgcolor: 'primary.100' }
+                            }}
+                          >
+                            <ViewIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="تعديل">
+                          <IconButton
+                            size="small"
+                            onClick={() => navigate(`/projects/${project.id}/edit`)}
+                            sx={{
+                              bgcolor: 'warning.50',
+                              color: 'warning.main',
+                              '&:hover': { bgcolor: 'warning.100' }
+                            }}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="أوامر التغيير">
+                          <IconButton
+                            size="small"
+                            onClick={(e) => handleActionMenuClick(e, project)}
+                            sx={{
+                              bgcolor: 'info.50',
+                              color: 'info.main',
+                              '&:hover': { bgcolor: 'info.100' }
+                            }}
+                          >
+                            <MoreVertIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        <TablePagination
+          component="div"
+          count={projects.length}
+          page={page}
+          onPageChange={handleChangePage}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          rowsPerPageOptions={[5, 10, 25, 50]}
+          labelRowsPerPage="عدد الصفوف في الصفحة:"
+          labelDisplayedRows={({ from, to, count }) => `${from}-${to} من ${count}`}
+          sx={{
+            '& .MuiTablePagination-toolbar': {
+              fontFamily: 'Sakkal Majalla'
+            },
+            '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+              fontFamily: 'Sakkal Majalla'
+            }
+          }}
+        />
+      </Paper>
     );
   };
 
@@ -1157,7 +1411,7 @@ const ProjectsList = () => {
                   fontSize: { xs: '1rem', sm: '1.125rem' }
                 }}
               >
-                نظرة شاملة على جميع المشاريع والإحصائيات مع أوامر التغيير
+                نظرة شاملة على جميع المشاريع مع عروض متعددة وأوامر التغيير
               </Typography>
             </Box>
             <Button
@@ -1224,6 +1478,46 @@ const ProjectsList = () => {
             </Grid>
           </Grid>
 
+          {/* View Mode Toggle */}
+          <Box display="flex" justifyContent="center" mb={4}>
+            <Paper sx={{ p: 1, borderRadius: 3 }}>
+              <ToggleButtonGroup
+                value={viewMode}
+                exclusive
+                onChange={(e, newView) => newView && setViewMode(newView)}
+                sx={{
+                  '& .MuiToggleButton-root': {
+                    borderRadius: 2,
+                    px: 3,
+                    py: 1,
+                    fontFamily: 'Sakkal Majalla',
+                    fontWeight: 600,
+                    '&.Mui-selected': {
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: 'white',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
+                      }
+                    }
+                  }
+                }}
+              >
+                <ToggleButton value="cards">
+                  <CardViewIcon sx={{ mr: 1 }} />
+                  عرض البطاقات
+                </ToggleButton>
+                <ToggleButton value="kanban">
+                  <KanbanIcon sx={{ mr: 1 }} />
+                  عرض كانبان
+                </ToggleButton>
+                <ToggleButton value="list">
+                  <ListViewIcon sx={{ mr: 1 }} />
+                  عرض القائمة
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Paper>
+          </Box>
+
           {/* Error Alert */}
           {error && (
             <Alert
@@ -1243,7 +1537,7 @@ const ProjectsList = () => {
             </Alert>
           )}
 
-          {/* Projects Grid */}
+          {/* Content based on view mode */}
           {projects.length === 0 ? (
             <Paper sx={{
               p: 8,
@@ -1291,13 +1585,58 @@ const ProjectsList = () => {
               </Button>
             </Paper>
           ) : (
-            <Grid container spacing={3}>
-              {projects.map((project) => (
-                <Grid item xs={12} sm={6} lg={4} xl={3} key={project.id}>
-                  <ProjectCard project={project} />
+            <>
+              {/* Cards View */}
+              {viewMode === 'cards' && (
+                <Grid container spacing={3}>
+                  {projects.map((project) => (
+                    <Grid item xs={12} sm={6} lg={4} xl={3} key={project.id}>
+                      <ProjectCard project={project} />
+                    </Grid>
+                  ))}
                 </Grid>
-              ))}
-            </Grid>
+              )}
+
+              {/* Kanban View */}
+              {viewMode === 'kanban' && (
+                <Box sx={{ 
+                  display: 'flex', 
+                  gap: 3, 
+                  overflowX: 'auto', 
+                  pb: 2,
+                  minHeight: '600px'
+                }}>
+                  <KanbanColumn
+                    title="تخطيط"
+                    projects={groupedProjects.planning}
+                    statusConfig={getStatusConfig('planning')}
+                  />
+                  <KanbanColumn
+                    title="قيد التنفيذ"
+                    projects={groupedProjects.in_progress}
+                    statusConfig={getStatusConfig('in_progress')}
+                  />
+                  <KanbanColumn
+                    title="متوقف"
+                    projects={groupedProjects.suspended}
+                    statusConfig={getStatusConfig('suspended')}
+                  />
+                  <KanbanColumn
+                    title="مكتمل"
+                    projects={groupedProjects.completed}
+                    statusConfig={getStatusConfig('completed')}
+                  />
+                  <KanbanColumn
+                    title="ملغي"
+                    projects={groupedProjects.cancelled}
+                    statusConfig={getStatusConfig('cancelled')}
+                  />
+                </Box>
+              )}
+
+              {/* List View */}
+              {viewMode === 'list' && <ListView />}
+            </>
           )}
 
           {/* Action Menu */}
