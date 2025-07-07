@@ -76,15 +76,15 @@ const Layout = ({ children }) => {
                 px: 3,
                 py: 1,
                 fontWeight: 600,
-                color: isActive('/') ? 'primary.main' : 'text.primary',
-                bgcolor: isActive('/') ? 'primary.50' : 'transparent',
+                color: isActive('/') || isActive('/dashboard') ? 'primary.main' : 'text.primary',
+                bgcolor: isActive('/') || isActive('/dashboard') ? 'primary.50' : 'transparent',
                 '&:hover': {
                   bgcolor: 'primary.50',
                   color: 'primary.main'
                 }
               }}
             >
-              الرئيسية
+              لوحة التحكم
             </Button>
             <Button
               color="inherit"

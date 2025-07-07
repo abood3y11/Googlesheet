@@ -10,6 +10,7 @@ import Layout from './components/Layout';
 import ProjectsList from './pages/ProjectsList';
 import ProjectForm from './pages/ProjectForm';
 import ProjectDetails from './pages/ProjectDetails';
+import Dashboard from './pages/Dashboard';
 
 // Create beautiful RTL theme for Arabic with modern design
 const theme = createTheme({
@@ -187,7 +188,8 @@ function App() {
           <Router>
             <Layout>
               <Routes>
-                <Route path="/" element={<ProjectsList />} />
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/projects" element={<ProjectsList />} />
                 <Route path="/projects/new" element={<ProjectForm />} />
                 <Route path="/projects/:id" element={<ProjectDetails />} />
