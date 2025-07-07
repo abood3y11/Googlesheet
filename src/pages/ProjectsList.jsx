@@ -48,6 +48,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { projectsAPI } from '../services/api';
+import ProjectCommands from '../components/ProjectCommands';
 
 const ProjectsList = () => {
   const navigate = useNavigate();
@@ -56,6 +57,8 @@ const ProjectsList = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState('cards');
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [commandsDialog, setCommandsDialog] = useState(false);
 
   useEffect(() => {
     fetchProjects();
@@ -83,6 +86,22 @@ const ProjectsList = () => {
         setError(err.message);
       }
     }
+  };
+
+  const handleProjectUpdate = async (updatedProject) => {
+    try {
+      await projectsAPI.updateProject(updatedProject.id, updatedProject);
+      await fetchProjects(); // Refresh the list
+      setCommandsDialog(false);
+      setSelectedProject(null);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const openProjectCommands = (project) => {
+    setSelectedProject(project);
+    setCommandsDialog(true);
   };
 
   const getStatusConfig = (status) => {
@@ -381,6 +400,21 @@ const ProjectsList = () => {
                   <DeleteIcon />
                 </IconButton>
               </Tooltip>
+              <Tooltip title="أوامر التغيير">
+                <IconButton
+                  onClick={() => openProjectCommands(project)}
+                  sx={{
+                    bgcolor: 'info.50',
+                    color: 'info.main',
+                    '&:hover': {
+                      bgcolor: 'info.100',
+                      transform: 'scale(1.1)'
+                    }
+                  }}
+                >
+                  <ScheduleIcon />
+                </IconButton>
+              </Tooltip>
             </Box>
           </CardContent>
         </Card>
@@ -517,6 +551,20 @@ const ProjectsList = () => {
                   }}
                 >
                   <DeleteIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="أوامر التغيير">
+                <IconButton
+                  onClick={() => openProjectCommands(project)}
+                  sx={{
+                    bgcolor: 'info.50',
+                    color: 'info.main',
+                    '&:hover': {
+                      bgcolor: 'info.100'
+                    }
+                  }}
+                >
+                  <ScheduleIcon />
                 </IconButton>
               </Tooltip>
             </Box>
@@ -867,6 +915,18 @@ const ProjectsList = () => {
           )}
         </Box>
       </Box>
+
+      {/* Project Commands Dialog */}
+      {commandsDialog && selectedProject && (
+        <ProjectCommands
+          project={selectedProject}
+          onUpdate={handleProjectUpdate}
+          onClose={() => {
+            setCommandsDialog(false);
+            setSelectedProject(null);
+          }}
+        />
+      )}
     </Fade>
   );
 };

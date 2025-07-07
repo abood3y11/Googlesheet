@@ -39,6 +39,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { projectsAPI } from '../services/api';
+import ProjectCommands from '../components/ProjectCommands';
 
 const ProjectDetails = () => {
   const navigate = useNavigate();
@@ -47,6 +48,7 @@ const ProjectDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [deleteDialog, setDeleteDialog] = useState(false);
+  const [commandsDialog, setCommandsDialog] = useState(false);
 
   useEffect(() => {
     fetchProject();
@@ -71,6 +73,16 @@ const ProjectDetails = () => {
       navigate('/projects');
     } catch (err) {
       setError(err.message);
+    }
+  };
+
+  const handleProjectUpdate = async (updatedProject) => {
+    try {
+      await projectsAPI.updateProject(id, updatedProject);
+      setProject(updatedProject);
+      setCommandsDialog(false);
+    } catch (err) {
+      throw new Error(err.message);
     }
   };
 
@@ -413,6 +425,28 @@ const ProjectDetails = () => {
                   تعديل
                 </Button>
               </Tooltip>
+              <Tooltip title="أوامر التغيير">
+                <Button
+                  variant="outlined"
+                  startIcon={<ScheduleIcon />}
+                  onClick={() => setCommandsDialog(true)}
+                  sx={{
+                    borderRadius: 3,
+                    px: 3,
+                    py: 1.5,
+                    fontWeight: 600,
+                    borderColor: 'info.300',
+                    color: 'info.main',
+                    fontFamily: 'Sakkal Majalla',
+                    '&:hover': {
+                      bgcolor: 'info.50',
+                      borderColor: 'info.main'
+                    }
+                  }}
+                >
+                  أوامر التغيير
+                </Button>
+              </Tooltip>
               <Tooltip title="حذف المشروع">
                 <Button
                   variant="outlined"
@@ -750,6 +784,15 @@ const ProjectDetails = () => {
               </Button>
             </DialogActions>
           </Dialog>
+
+          {/* Project Commands Dialog */}
+          {commandsDialog && (
+            <ProjectCommands
+              project={project}
+              onUpdate={handleProjectUpdate}
+              onClose={() => setCommandsDialog(false)}
+            />
+          )}
         </Box>
       </Box>
     </Fade>

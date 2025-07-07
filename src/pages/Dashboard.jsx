@@ -36,16 +36,20 @@ import {
   Add as AddIcon,
   Analytics as AnalyticsIcon,
   Speed as SpeedIcon,
-  AccountBalance as BudgetIcon
+  AccountBalance as BudgetIcon,
+  Schedule as ScheduleIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, Area, AreaChart } from 'recharts';
 import mockData from '../data/mockData.json';
+import ProjectCommands from '../components/ProjectCommands';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [projects] = useState(mockData.projects);
   const [stats] = useState(mockData.statistics);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [commandsDialog, setCommandsDialog] = useState(false);
 
   // Calculate dynamic statistics
   const statusCounts = {
@@ -78,6 +82,23 @@ const Dashboard = () => {
       Math.ceil((new Date(project.actual_project_end_date) - new Date(project.project_start_date)) / (1000 * 60 * 60 * 24)) : 
       project.project_duration_days
   }));
+
+  const handleProjectUpdate = async (updatedProject) => {
+    try {
+      // In a real app, this would update the backend
+      // For now, we'll just close the dialog
+      setCommandsDialog(false);
+      setSelectedProject(null);
+      // You could also update the local state here if needed
+    } catch (err) {
+      throw new Error(err.message);
+    }
+  };
+
+  const openProjectCommands = (project) => {
+    setSelectedProject(project);
+    setCommandsDialog(true);
+  };
 
   const StatCard = ({ title, value, subtitle, icon, color, gradient, trend }) => (
     <Card sx={{
@@ -293,6 +314,22 @@ const Dashboard = () => {
                     maximumFractionDigits: 0,
                   }).format(project.project_cost)}
                 </Typography>
+                <Tooltip title="أوامر التغيير">
+                  <IconButton
+                    onClick={() => openProjectCommands(project)}
+                    sx={{
+                      bgcolor: 'info.50',
+                      color: 'info.main',
+                      ml: 1,
+                      '&:hover': {
+                        bgcolor: 'info.100',
+                        transform: 'scale(1.1)'
+                      }
+                    }}
+                  >
+                    <ScheduleIcon />
+                  </IconButton>
+                </Tooltip>
               </Box>
             </Box>
           }
@@ -873,6 +910,18 @@ const Dashboard = () => {
           </Grid>
         </Box>
       </Box>
+
+      {/* Project Commands Dialog */}
+      {commandsDialog && selectedProject && (
+        <ProjectCommands
+          project={selectedProject}
+          onUpdate={handleProjectUpdate}
+          onClose={() => {
+            setCommandsDialog(false);
+            setSelectedProject(null);
+          }}
+        />
+      )}
     </Fade>
   );
 };
