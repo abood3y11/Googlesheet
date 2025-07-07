@@ -27,7 +27,7 @@ import {
   Schedule as InProgressIcon,
   Warning as SuspendedIcon,
   Cancel as CancelledIcon,
-  Planning as PlanningIcon,
+  Info as PlanningIcon,
   AttachMoney as MoneyIcon,
   Timeline as TimelineIcon,
   Business as BusinessIcon,
