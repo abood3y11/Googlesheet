@@ -353,7 +353,8 @@ const Dashboard = () => {
 
   return (
     <Fade in={true} timeout={800}>
-      <Box sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3 } }}>
+      <div>
+        <Box sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3 } }}>
         <Box sx={{ py: 4 }}>
           {/* Header */}
           <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={4} flexWrap="wrap" gap={2}>
@@ -910,6 +911,7 @@ const Dashboard = () => {
           </Grid>
         </Box>
       </Box>
+      </div>
 
       {/* Project Commands Dialog */}
       {commandsDialog && selectedProject && (
